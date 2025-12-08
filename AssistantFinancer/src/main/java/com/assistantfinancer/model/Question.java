@@ -17,6 +17,7 @@ public class Question {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(columnDefinition = "LONGTEXT")
     private String content; // texte de la question
     private LocalDateTime timestamp = LocalDateTime.now();
 

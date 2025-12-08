@@ -17,6 +17,7 @@ public class Response {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(columnDefinition = "LONGTEXT")
     private String content; // réponse générée par ChatGPT
     private LocalDateTime timestamp = LocalDateTime.now();
 
