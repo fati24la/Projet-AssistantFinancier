@@ -1,5 +1,6 @@
 package com.assistantfinancer.controller;
 
+import com.assistantfinancer.dto.ChatAnswerDto;
 import com.assistantfinancer.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,7 @@ public class AudioController {
     private ChatService chatService;
 
     @PostMapping("/audio-question")
-    public ResponseEntity<String> audioQuestion(
+    public ResponseEntity<ChatAnswerDto> audioQuestion(
             @RequestParam("file") MultipartFile file,
             @RequestParam("userId") Long userId
     ) throws IOException {
@@ -30,16 +31,14 @@ public class AudioController {
         }
 
         try {
-            // 2️⃣ Pipeline complet : Whisper + Gemini + BD
-            String answerText = chatService.processAudioQuestion(tempFile, userId);
+            // 2️⃣ Pipeline complet : Whisper + Gemini + TTS + BD
+            ChatAnswerDto result = chatService.processAudioQuestion(tempFile, userId);
 
-            // 3️⃣ Retourner la réponse texte
-            return ResponseEntity.ok(answerText);
+            // 3️⃣ Retourner le JSON : transcript + answerText + audioBase64
+            return ResponseEntity.ok(result);
+
         } finally {
             tempFile.delete();
         }
     }
-
-
-
 }

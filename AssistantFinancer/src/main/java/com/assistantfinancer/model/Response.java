@@ -19,6 +19,10 @@ public class Response {
 
     @Column(columnDefinition = "LONGTEXT")
     private String content; // réponse générée par ChatGPT
+
+    @Column(name = "audio_base64", columnDefinition = "LONGTEXT") // champ de audio en base64
+    private String audioBase64;
+
     private LocalDateTime timestamp = LocalDateTime.now();
 
     @ManyToOne
