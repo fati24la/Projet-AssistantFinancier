@@ -59,22 +59,34 @@ public class SecurityConfig {
                 if (authHeader != null && authHeader.startsWith("Bearer ")) {
                     String token = authHeader.substring(7);
 
-                    String username = jwtService.extractUsername(token);
+                    try {
+                        System.out.println("🔐 [JWT Filter] Tentative de validation du token...");
+                        String username = jwtService.extractUsername(token);
+                        System.out.println("✅ [JWT Filter] Token valide pour l'utilisateur: " + username);
 
-                    if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                        UserDetails user = org.springframework.security.core.userdetails.User
-                                .withUsername(username)
-                                .password("")   // pas utilisé
-                                .authorities("USER") // role par défaut
-                                .build();
+                            UserDetails user = org.springframework.security.core.userdetails.User
+                                    .withUsername(username)
+                                    .password("")   // pas utilisé
+                                    .authorities("USER") // role par défaut
+                                    .build();
 
-                        UsernamePasswordAuthenticationToken authToken =
-                                new UsernamePasswordAuthenticationToken(
-                                        user, null, user.getAuthorities());
+                            UsernamePasswordAuthenticationToken authToken =
+                                    new UsernamePasswordAuthenticationToken(
+                                            user, null, user.getAuthorities());
 
-                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                            SecurityContextHolder.getContext().setAuthentication(authToken);
+                            System.out.println("✅ [JWT Filter] Authentification définie dans SecurityContext");
+                        }
+                    } catch (Exception e) {
+                        // Token invalide ou expiré
+                        System.out.println("❌ [JWT Filter] Erreur de validation du token: " + e.getMessage());
+                        e.printStackTrace();
+                        // On continue pour que Spring Security gère avec 401/403
                     }
+                } else {
+                    System.out.println("⚠️ [JWT Filter] Pas de header Authorization ou format incorrect");
                 }
 
                 filterChain.doFilter(request, response);

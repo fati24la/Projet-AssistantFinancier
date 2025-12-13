@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'RegisterPage.dart';
 import 'VoiceChatPage.dart';
 import 'auth_service.dart';
+import 'storage_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -188,29 +189,90 @@ class _LoginPageState extends State<LoginPage> {
                       child: ElevatedButton(
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                            final result = await AuthService.login(
-                              username: _usernameController.text,
-                              password: _passwordController.text,
+                            // Afficher un indicateur de chargement
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
                             );
 
-                            if (result['statusCode'] == 200) {
-                              final token = result['body']['token'];
-                              final username = result['body']['username'];
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Bienvenue $username !')),
+                            try {
+                              final result = await AuthService.login(
+                                username: _usernameController.text,
+                                password: _passwordController.text,
                               );
 
-                              // Naviguer vers VoiceChatPage
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (context) => const VoiceChatPage()),
-                              );
+                              // Fermer l'indicateur de chargement
+                              if (context.mounted) Navigator.pop(context);
 
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Identifiants invalides')),
-                              );
+                              if (result['statusCode'] == 200) {
+                                try {
+                                  final token = result['body']['token'];
+                                  final username = result['body']['username'];
+                                  final userId = result['body']['userId'];
+
+                                  // Sauvegarder le token et userId
+                                  await StorageService.saveToken(token);
+                                  await StorageService.saveUserId(userId);
+                                  await StorageService.saveUsername(username);
+
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Bienvenue $username !'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+
+                                    // Naviguer vers VoiceChatPage
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const VoiceChatPage()),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Erreur lors de la connexion: ${e.toString()}'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              } else {
+                                String errorMessage = 'Identifiants invalides';
+                                if (result['body'] != null) {
+                                  if (result['body'] is String) {
+                                    errorMessage = result['body'];
+                                  } else {
+                                    errorMessage = result['body'].toString();
+                                  }
+                                }
+
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(errorMessage),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            } catch (e) {
+                              // Fermer l'indicateur de chargement en cas d'erreur
+                              if (context.mounted) Navigator.pop(context);
+
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Erreur: ${e.toString()}'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             }
                           }
                         },

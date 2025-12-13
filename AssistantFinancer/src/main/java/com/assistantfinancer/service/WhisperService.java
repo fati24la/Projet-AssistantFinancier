@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class WhisperService {
@@ -14,9 +15,14 @@ public class WhisperService {
     private static final String OPENAI_API_KEY = "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";
     private static final String WHISPER_URL = "https://api.openai.com/v1/audio/transcriptions";
 
-    public String transcribe(File audioFile) throws IOException {
+    private final OkHttpClient client = new OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(180, TimeUnit.SECONDS)
+            .writeTimeout(180, TimeUnit.SECONDS)
+            .callTimeout(180, TimeUnit.SECONDS)
+            .build();
 
-        OkHttpClient client = new OkHttpClient();
+    public String transcribe(File audioFile) throws IOException {
 
         MediaType mediaType = MediaType.parse("audio/mpeg"); // ou audio/wav selon ton fichier
         RequestBody fileBody = RequestBody.create(mediaType, audioFile);

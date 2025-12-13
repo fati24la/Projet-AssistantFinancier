@@ -3,11 +3,15 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'ChatApiService.dart';
 import 'Message.dart';
+import 'storage_service.dart';
+import 'LoginPage.dart';
+import 'auth_service.dart';
 
 class VoiceChatPage extends StatefulWidget {
   const VoiceChatPage({Key? key}) : super(key: key);
@@ -34,6 +38,9 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
+
+    // Vérifier si l'utilisateur est connecté
+    _checkAuth();
 
     // Animation pour le bouton vocal
     _pulseController = AnimationController(
@@ -62,6 +69,19 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
     _recorder = FlutterSoundRecorder();
   }
 
+  void _checkAuth() async {
+    final isLoggedIn = await StorageService.isLoggedIn();
+    if (!isLoggedIn) {
+      // Rediriger vers la page de login si non connecté
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _textController.dispose();
@@ -85,17 +105,51 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
 
 
   void _handleStopRecordingAndSend() async {
-    setState(() {
-      _isRecording = false;
-      _isListening = false;
-    });
+    // Arrêter les animations
     _pulseController.stop();
     _waveController.stop();
 
+    // Vérifier qu'un enregistrement était en cours
+    if (!_isRecording || !_recorderInitialized) {
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+          _isListening = false;
+        });
+      }
+      return;
+    }
+
     try {
       File audioFile = await stopRecording();
+      
+      // Mettre à jour l'état après avoir arrêté l'enregistrement
+      if (!mounted) return;
+      
+      setState(() {
+        _isRecording = false;
+        _isListening = false;
+      });
+      
+      // Attendre un peu pour que l'UI se mette à jour
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      if (!mounted) return;
+      
+      // Vérifier que le fichier existe et n'est pas vide
+      if (!await audioFile.exists()) {
+        throw Exception('Le fichier audio n\'existe pas');
+      }
+
+      // Vérifier la taille du fichier
+      final fileSize = await audioFile.length();
+      if (fileSize == 0) {
+        throw Exception('Le fichier audio est vide (0 bytes). Veuillez réessayer.');
+      }
 
       // Affiche le message "envoi audio"
+      if (!mounted) return;
+      
       setState(() {
         _messages.add(Message(
           text: "…envoi de l'audio…",
@@ -103,28 +157,103 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
           timestamp: DateTime.now(),
         ));
       });
+      
+      _scrollToBottom();
 
-      // Appel au backend
-      String answer = await ChatApiService(baseUrl: "http://192.168.11.106:8080")
-          .sendAudioQuestion(audioFile, 1);
+      // Appel au backend (le userId est extrait du token côté backend)
+      // Utiliser la même base URL que dans auth_service (sans /api/auth)
+      final baseUrl = AuthService.baseUrl.replaceAll('/api/auth', '');
+      print('🔗 [VoiceChatPage] Base URL: $baseUrl');
+      print('📁 [VoiceChatPage] Fichier audio: ${audioFile.path} (${await audioFile.length()} bytes)');
+      
+      final response = await ChatApiService(baseUrl: baseUrl)
+          .sendAudioQuestion(audioFile);
+      
+      print('✅ [VoiceChatPage] Réponse reçue du backend: $response');
+
+      if (!mounted) return;
+
+      // Extraire la réponse texte du JSON ChatAnswerDto
+      final answerText = response['answerText'] as String? ?? 'Réponse non disponible';
 
       setState(() {
+        // Supprimer le message "envoi audio"
+        if (_messages.isNotEmpty && _messages.last.text == "…envoi de l'audio…") {
+          _messages.removeLast();
+        }
+
+        // Ajouter la transcription de l'utilisateur
+        final transcript = response['transcript'] as String?;
+        if (transcript != null && transcript.isNotEmpty) {
+          _messages.add(Message(
+            text: transcript,
+            isUser: true,
+            timestamp: DateTime.now(),
+          ));
+        }
+
+        // Ajouter la réponse de l'assistant
         _messages.add(Message(
-          text: answer,
+          text: answerText,
           isUser: false,
           timestamp: DateTime.now(),
         ));
       });
 
-      _scrollToBottom();
+      if (mounted) {
+        _scrollToBottom();
+      }
 
-    } catch (e) {
-      setState(() {
-        _messages.add(Message(
-          text: "Erreur lors de l'envoi de l'audio : $e",
-          isUser: false,
-          timestamp: DateTime.now(),
-        ));
+    } catch (e, stackTrace) {
+      // Mettre à jour l'état en cas d'erreur (uniquement si le widget est toujours monté)
+      print('❌ [VoiceChatPage] Erreur lors de l\'envoi: $e');
+      print('📚 [VoiceChatPage] Stack trace: $stackTrace');
+      
+      if (!mounted) return;
+      
+      // Extraire le message d'erreur
+      String errorMessage = "Erreur lors de l'envoi de l'audio : $e";
+      bool shouldLogout = false;
+      
+      if (e.toString().contains('403') || e.toString().contains('401')) {
+        errorMessage = "Erreur d'authentification. Veuillez vous reconnecter.";
+        shouldLogout = true;
+      } else if (e.toString().contains('vide') || e.toString().contains('empty')) {
+        errorMessage = "Le fichier audio est vide. Veuillez parler plus longtemps et réessayer.";
+      } else if (e.toString().contains('Connection') || e.toString().contains('timeout') || e.toString().contains('Timeout')) {
+        errorMessage = "Erreur de connexion ou timeout. Vérifiez votre connexion internet et réessayez.";
+      }
+      
+      // Nettoyer l'authentification si nécessaire
+      if (shouldLogout) {
+        await StorageService.clearAuth();
+      }
+      
+      // Utiliser WidgetsBinding.instance.addPostFrameCallback pour éviter les problèmes de contexte
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _isRecording = false;
+          _isListening = false;
+          
+          // Supprimer le message "envoi audio" en cas d'erreur
+          if (_messages.isNotEmpty && _messages.last.text == "…envoi de l'audio…") {
+            _messages.removeLast();
+          }
+
+          _messages.add(Message(
+            text: errorMessage,
+            isUser: false,
+            timestamp: DateTime.now(),
+          ));
+        });
+        
+        if (mounted && shouldLogout) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+          );
+        }
       });
     }
   }
@@ -148,46 +277,132 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
   }
 
   Future<bool> requestPermissions() async {
-    var statusMic = await Permission.microphone.request();
-    var statusStorage = await Permission.storage.request();
+    try {
+      // Demander la permission du microphone
+      var statusMic = await Permission.microphone.status;
+      if (!statusMic.isGranted) {
+        statusMic = await Permission.microphone.request();
+      }
 
-    return statusMic.isGranted && statusStorage.isGranted;
+      // Sur Android 13+, on n'a plus besoin de permission storage pour les fichiers temporaires
+      // Mais on demande quand même pour la compatibilité
+      if (await Permission.storage.isDenied) {
+        await Permission.storage.request();
+      }
+
+      return statusMic.isGranted;
+    } catch (e) {
+      print("Erreur lors de la demande de permissions: $e");
+      return false;
+    }
   }
 
   void _startRecording() async {
-    bool granted = await requestPermissions();
-    if (!granted) {
-      print("Permissions non accordées !");
-      return;
+    try {
+      // Demander les permissions
+      bool granted = await requestPermissions();
+      if (!granted) {
+        // Ne pas afficher de SnackBar pour éviter les problèmes de contexte
+        print("Permission microphone non accordée !");
+        return;
+      }
+
+      // Obtenir le répertoire temporaire
+      final tempDir = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final path = '${tempDir.path}/audio_question_$timestamp.aac';
+
+      // Initialiser le recorder s'il n'est pas déjà initialisé
+      if (!_recorderInitialized) {
+        await _recorder.openRecorder();
+        _recorderInitialized = true;
+      }
+
+      // Démarrer l'enregistrement
+      await _recorder.startRecorder(
+        toFile: path,
+      );
+
+      // Mettre à jour l'état
+      if (mounted) {
+        setState(() {
+          _isRecording = true;
+          _isListening = true;
+        });
+        _pulseController.repeat(reverse: true);
+        _waveController.repeat();
+      }
+    } catch (e) {
+      print("Erreur lors du démarrage de l'enregistrement: $e");
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+          _isListening = false;
+        });
+      }
     }
-
-    final tempDir = await getTemporaryDirectory();
-    final path = '${tempDir.path}/audio_question.aac';
-
-    if (!_recorderInitialized) {
-      await _recorder.openRecorder();
-      _recorderInitialized = true;
-    }
-
-    await _recorder.startRecorder(toFile: path);
-
-    setState(() {
-      _isRecording = true;
-      _isListening = true;
-    });
-    _pulseController.repeat(reverse: true);
-    _waveController.repeat();
   }
 
 
   Future<File> stopRecording() async {
-    if (!_isRecording) return File(''); // Aucun enregistrement en cours
+    try {
+      // Arrêter l'enregistrement
+      String? path = await _recorder.stopRecorder();
+      
+      // Vérifier que le path n'est pas null ou vide
+      if (path == null || path.isEmpty) {
+        throw Exception('Le chemin du fichier audio est vide');
+      }
 
-    final path = await _recorder.stopRecorder();
-    await _recorder.closeRecorder();
-    _recorderInitialized = false;
+      // Attendre un peu plus longtemps pour que le fichier soit complètement écrit
+      await Future.delayed(const Duration(milliseconds: 300));
 
-    return File(path!);
+      // Créer l'objet File et vérifier qu'il existe
+      File audioFile = File(path);
+      
+      // Attendre jusqu'à ce que le fichier existe (avec timeout)
+      int attempts = 0;
+      while (!await audioFile.exists() && attempts < 10) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        attempts++;
+      }
+      
+      if (!await audioFile.exists()) {
+        throw Exception('Le fichier audio n\'existe pas au chemin: $path');
+      }
+
+      // Vérifier que le fichier n'est pas vide
+      int fileSize = 0;
+      attempts = 0;
+      while (fileSize == 0 && attempts < 10) {
+        fileSize = await audioFile.length();
+        if (fileSize == 0) {
+          await Future.delayed(const Duration(milliseconds: 100));
+          attempts++;
+        }
+      }
+      
+      if (fileSize == 0) {
+        throw Exception('Le fichier audio est vide. Assurez-vous d\'avoir parlé pendant l\'enregistrement.');
+      }
+
+      // Fermer le recorder
+      await _recorder.closeRecorder();
+      _recorderInitialized = false;
+
+      return audioFile;
+    } catch (e) {
+      // Fermer le recorder en cas d'erreur
+      try {
+        if (_recorderInitialized) {
+          await _recorder.closeRecorder();
+          _recorderInitialized = false;
+        }
+      } catch (_) {
+        // Ignorer les erreurs de fermeture
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -303,11 +518,23 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
             ),
             child: Row(
               children: [
-                // Bouton vocal
+                // Bouton vocal avec support pour press-and-hold et tap
                 GestureDetector(
-                  onTapDown: (_) => _startRecording(),
-                  onTapUp: (_) => _handleStopRecordingAndSend(),
-                  onTapCancel: () => _handleStopRecordingAndSend(),
+                  onTapDown: (_) {
+                    if (!_isRecording) {
+                      _startRecording();
+                    }
+                  },
+                  onTapUp: (_) {
+                    if (_isRecording) {
+                      _handleStopRecordingAndSend();
+                    }
+                  },
+                  onTapCancel: () {
+                    if (_isRecording) {
+                      _handleStopRecordingAndSend();
+                    }
+                  },
                   child: AnimatedBuilder(
                     animation: _pulseAnimation,
                     builder: (context, child) {

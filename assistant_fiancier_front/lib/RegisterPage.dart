@@ -247,21 +247,66 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: ElevatedButton(
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                            final result = await AuthService.register(
-                              username: _nameController.text,
-                              email: _emailController.text,
-                              password: _passwordController.text,
+                            // Afficher un indicateur de chargement
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
                             );
 
-                            if (result['statusCode'] == 200) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Inscription réussie !')),
+                            try {
+                              final result = await AuthService.register(
+                                username: _nameController.text,
+                                email: _emailController.text,
+                                password: _passwordController.text,
                               );
-                              Navigator.pop(context); // Retour au Login
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(result['body'])),
-                              );
+
+                              // Fermer l'indicateur de chargement
+                              if (context.mounted) Navigator.pop(context);
+
+                              if (result['statusCode'] == 200) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Inscription réussie !'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                  Navigator.pop(context); // Retour au Login
+                                }
+                              } else {
+                                String errorMessage = 'Erreur lors de l\'inscription';
+                                if (result['body'] != null) {
+                                  if (result['body'] is String) {
+                                    errorMessage = result['body'];
+                                  } else {
+                                    errorMessage = result['body'].toString();
+                                  }
+                                }
+
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(errorMessage),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            } catch (e) {
+                              // Fermer l'indicateur de chargement en cas d'erreur
+                              if (context.mounted) Navigator.pop(context);
+
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Erreur: ${e.toString()}'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             }
                           }
                         },
