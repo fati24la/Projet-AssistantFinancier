@@ -84,4 +84,63 @@ class ChatApiService {
       throw Exception('Erreur API: ${response.statusCode} - $errorBody');
     }
   }
+
+  Future<Map<String, dynamic>> sendTextQuestion(String questionText) async {
+    print('📤 [ChatApiService] Début de l\'envoi de la question texte...');
+    
+    // Récupérer le token
+    final token = await StorageService.getToken();
+    if (token == null || token.isEmpty) {
+      print('❌ [ChatApiService] Token manquant');
+      throw Exception('Token d\'authentification manquant. Veuillez vous reconnecter.');
+    }
+    print('✅ [ChatApiService] Token récupéré (longueur: ${token.length})');
+
+    var uri = Uri.parse('$baseUrl/chat/text-question');
+    print('🌐 [ChatApiService] URL: $uri');
+    
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'text': questionText,
+      }),
+    ).timeout(
+      const Duration(seconds: 180), // 3 minutes pour Gemini
+      onTimeout: () {
+        print('⏱️ [ChatApiService] Timeout après 180 secondes');
+        throw Exception('Timeout: La requête a pris trop de temps. Le traitement peut prendre du temps.');
+      },
+    );
+
+    print('📥 [ChatApiService] Réponse reçue: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final respStr = response.body;
+      print('✅ [ChatApiService] Réponse reçue (${respStr.length} caractères)');
+      // Parser le JSON ChatAnswerDto
+      try {
+        final Map<String, dynamic> jsonResponse = jsonDecode(respStr);
+        print('✅ [ChatApiService] JSON parsé avec succès');
+        return jsonResponse;
+      } catch (e) {
+        print('❌ [ChatApiService] Erreur de parsing JSON: $e');
+        print('📄 [ChatApiService] Contenu de la réponse: $respStr');
+        throw Exception('Erreur lors du parsing de la réponse: $e');
+      }
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
+      // Token invalide, expiré ou non autorisé
+      final errorBody = response.body;
+      print('❌ [ChatApiService] Erreur d\'authentification (${response.statusCode}): $errorBody');
+      await StorageService.clearAuth();
+      throw Exception('Session expirée ou non autorisée (${response.statusCode}). Veuillez vous reconnecter.');
+    } else {
+      final errorBody = response.body;
+      print('❌ [ChatApiService] Erreur API (${response.statusCode}): $errorBody');
+      throw Exception('Erreur API: ${response.statusCode} - $errorBody');
+    }
+  }
 }

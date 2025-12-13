@@ -262,21 +262,94 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
   }
 
 
-  void _handleTextMessage() {
+  void _handleTextMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
+    // Ajouter le message de l'utilisateur
     setState(() {
       _messages.add(Message(
         text: text,
         isUser: true,
         timestamp: DateTime.now(),
+        isAudio: false,
       ));
     });
 
     _textController.clear();
     _scrollToBottom();
 
+    try {
+      // Envoyer la question texte au backend
+      final baseUrl = AuthService.baseUrl.replaceAll('/api/auth', '');
+      print('📝 [VoiceChatPage] Envoi de la question texte: $text');
+      
+      final response = await ChatApiService(baseUrl: baseUrl)
+          .sendTextQuestion(text);
+      
+      print('✅ [VoiceChatPage] Réponse texte reçue du backend: $response');
+
+      if (!mounted) return;
+
+      // Extraire la réponse texte
+      final answerText = response['answerText'] as String? ?? 'Réponse non disponible';
+
+      setState(() {
+        // Ajouter la réponse texte de l'assistant (pas audio)
+        _messages.add(Message(
+          text: answerText,
+          isUser: false,
+          timestamp: DateTime.now(),
+          isAudio: false, // Réponse texte, pas audio
+        ));
+      });
+
+      if (mounted) {
+        _scrollToBottom();
+      }
+
+    } catch (e, stackTrace) {
+      print('❌ [VoiceChatPage] Erreur lors de l\'envoi du texte: $e');
+      print('📚 [VoiceChatPage] Stack trace: $stackTrace');
+      
+      if (!mounted) return;
+      
+      // Extraire le message d'erreur
+      String errorMessage = "Erreur lors de l'envoi du message : $e";
+      bool shouldLogout = false;
+      
+      if (e.toString().contains('403') || e.toString().contains('401')) {
+        errorMessage = "Erreur d'authentification. Veuillez vous reconnecter.";
+        shouldLogout = true;
+      } else if (e.toString().contains('Connection') || e.toString().contains('timeout') || e.toString().contains('Timeout')) {
+        errorMessage = "Erreur de connexion ou timeout. Vérifiez votre connexion internet et réessayez.";
+      }
+      
+      // Nettoyer l'authentification si nécessaire
+      if (shouldLogout) {
+        await StorageService.clearAuth();
+      }
+      
+      // Utiliser WidgetsBinding.instance.addPostFrameCallback pour éviter les problèmes de contexte
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _messages.add(Message(
+            text: errorMessage,
+            isUser: false,
+            timestamp: DateTime.now(),
+            isAudio: false,
+          ));
+        });
+        
+        if (mounted && shouldLogout) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+          );
+        }
+      });
+    }
   }
 
   Future<bool> requestPermissions() async {
