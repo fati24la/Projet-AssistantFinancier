@@ -159,7 +159,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
         throw Exception('Le fichier audio est vide (0 bytes). Veuillez réessayer.');
       }
 
-      // Affiche un message audio de l'utilisateur
+      // Affiche un message audio de l'utilisateur avec le chemin du fichier
       if (!mounted) return;
       
       setState(() {
@@ -168,6 +168,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
           isUser: true,
           timestamp: DateTime.now(),
           isAudio: true,
+          audioFilePath: audioFile.path, // Sauvegarder le chemin pour pouvoir le réécouter
         ));
       });
       
@@ -679,7 +680,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
                       ),
                     ],
                   ),
-                  child: message.isAudio && message.audioBase64 != null && !message.isUser
+                  child: message.isAudio && ((message.audioBase64 != null && !message.isUser) || (message.audioFilePath != null && message.isUser))
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -689,11 +690,17 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
                                 color: message.isUser ? Colors.white : const Color(0xFF4DD0E1),
                                 size: 28,
                               ),
-                              onPressed: () => _playAudioFromBase64(message.audioBase64!, _messages.indexOf(message)),
+                              onPressed: () {
+                                if (message.isUser && message.audioFilePath != null) {
+                                  _playAudioFromFile(message.audioFilePath!, _messages.indexOf(message));
+                                } else if (!message.isUser && message.audioBase64 != null) {
+                                  _playAudioFromBase64(message.audioBase64!, _messages.indexOf(message));
+                                }
+                              },
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              isCurrentlyPlaying ? "Lecture en cours..." : "Réponse audio",
+                              isCurrentlyPlaying ? "Lecture en cours..." : (message.isUser ? "Audio envoyé" : "Réponse audio"),
                               style: TextStyle(
                                 color: message.isUser ? Colors.white : Colors.black87,
                                 fontSize: 15,
@@ -805,6 +812,73 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
       
     } catch (e) {
       print('❌ [VoiceChatPage] Erreur lors de la lecture audio: $e');
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _currentlyPlayingMessageId = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _playAudioFromFile(String audioFilePath, int messageIndex) async {
+    try {
+      final messageId = _messages[messageIndex].timestamp.millisecondsSinceEpoch.toString();
+      
+      // Si c'est le même message qui est en train de jouer, on arrête
+      if (_isPlaying && _currentlyPlayingMessageId == messageId) {
+        await _player.stopPlayer();
+        if (mounted) {
+          setState(() {
+            _isPlaying = false;
+            _currentlyPlayingMessageId = null;
+          });
+        }
+        return;
+      }
+      
+      // Vérifier que le fichier existe
+      final audioFile = File(audioFilePath);
+      if (!await audioFile.exists()) {
+        print('❌ [VoiceChatPage] Le fichier audio n\'existe pas: $audioFilePath');
+        return;
+      }
+      
+      print('🎵 [VoiceChatPage] Lecture de l\'audio: ${audioFile.path}');
+      
+      // Initialiser le player si nécessaire
+      if (!_playerInitialized) {
+        await _player.openPlayer();
+        _playerInitialized = true;
+      }
+      
+      // Arrêter la lecture précédente si elle est en cours
+      if (_isPlaying) {
+        await _player.stopPlayer();
+      }
+      
+      // Mettre à jour l'état pour afficher l'indicateur de lecture
+      setState(() {
+        _isPlaying = true;
+        _currentlyPlayingMessageId = messageId;
+      });
+      
+      // Jouer l'audio (AAC depuis l'utilisateur)
+      await _player.startPlayer(
+        fromURI: audioFile.path,
+        codec: Codec.aacADTS, // Utiliser AAC pour les enregistrements de l'utilisateur
+        whenFinished: () {
+          if (mounted) {
+            setState(() {
+              _isPlaying = false;
+              _currentlyPlayingMessageId = null;
+            });
+          }
+        },
+      );
+      
+    } catch (e) {
+      print('❌ [VoiceChatPage] Erreur lors de la lecture audio depuis fichier: $e');
       if (mounted) {
         setState(() {
           _isPlaying = false;
