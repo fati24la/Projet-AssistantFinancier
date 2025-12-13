@@ -390,14 +390,60 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
 
       // Initialiser le recorder s'il n'est pas déjà initialisé
       if (!_recorderInitialized) {
-        await _recorder.openRecorder();
-        _recorderInitialized = true;
+        try {
+          await _recorder.openRecorder();
+          _recorderInitialized = true;
+          print('✅ [VoiceChatPage] Recorder initialisé');
+        } catch (e) {
+          print('❌ [VoiceChatPage] Erreur lors de l\'initialisation du recorder: $e');
+          // Si le recorder est déjà ouvert, on peut ignorer l'erreur
+          _recorderInitialized = true;
+        }
+      }
+
+      // Vérifier si le recorder est déjà en train d'enregistrer et l'arrêter si nécessaire
+      try {
+        bool isCurrentlyRecording = await _recorder.isRecording;
+        if (isCurrentlyRecording) {
+          print('⚠️ [VoiceChatPage] Le recorder est déjà en train d\'enregistrer, arrêt du précédent...');
+          try {
+            await _recorder.stopRecorder();
+            await Future.delayed(const Duration(milliseconds: 200)); // Attendre un peu plus
+            print('✅ [VoiceChatPage] Enregistrement précédent arrêté');
+          } catch (e) {
+            print('⚠️ [VoiceChatPage] Erreur lors de l\'arrêt du recorder précédent: $e');
+            // Continuer quand même
+          }
+        }
+      } catch (e) {
+        print('⚠️ [VoiceChatPage] Erreur lors de la vérification isRecording: $e');
+        // Continuer quand même
       }
 
       // Démarrer l'enregistrement
-      await _recorder.startRecorder(
-        toFile: path,
-      );
+      try {
+        await _recorder.startRecorder(
+          toFile: path,
+          codec: Codec.aacADTS,
+        );
+        print('✅ [VoiceChatPage] Enregistrement démarré: $path');
+      } catch (e) {
+        print('❌ [VoiceChatPage] Erreur lors du démarrage de l\'enregistrement: $e');
+        // Si le démarrage échoue, essayer de réinitialiser le recorder
+        try {
+          await _recorder.closeRecorder();
+          await Future.delayed(const Duration(milliseconds: 200));
+          await _recorder.openRecorder();
+          await _recorder.startRecorder(
+            toFile: path,
+            codec: Codec.aacADTS,
+          );
+          print('✅ [VoiceChatPage] Enregistrement démarré après réinitialisation');
+        } catch (e2) {
+          print('❌ [VoiceChatPage] Erreur lors de la réinitialisation: $e2');
+          rethrow;
+        }
+      }
 
       // Mettre à jour l'état
       if (mounted) {
@@ -422,13 +468,44 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
 
   Future<File> stopRecording() async {
     try {
-      // Arrêter l'enregistrement
-      String? path = await _recorder.stopRecorder();
+      // Vérifier que le recorder est initialisé
+      if (!_recorderInitialized) {
+        print('❌ [VoiceChatPage] Le recorder n\'est pas initialisé');
+        throw Exception('Le recorder n\'est pas initialisé');
+      }
+
+      // Essayer d'arrêter l'enregistrement, même si isRecording retourne false
+      // (car cette vérification peut être peu fiable)
+      String? path;
+      try {
+        // Vérifier d'abord si le recorder est en train d'enregistrer
+        bool isCurrentlyRecording = await _recorder.isRecording;
+        print('📊 [VoiceChatPage] État du recorder (isRecording): $isCurrentlyRecording');
+        
+        if (isCurrentlyRecording) {
+          path = await _recorder.stopRecorder();
+        } else {
+          // Si isRecording retourne false mais qu'on pense qu'on enregistre,
+          // on essaie quand même d'arrêter (au cas où)
+          print('⚠️ [VoiceChatPage] isRecording=false mais on essaie quand même d\'arrêter...');
+          try {
+            path = await _recorder.stopRecorder();
+          } catch (e) {
+            print('⚠️ [VoiceChatPage] Erreur lors de l\'arrêt (normal si pas d\'enregistrement): $e');
+            throw Exception('Aucun enregistrement en cours');
+          }
+        }
+      } catch (e) {
+        print('❌ [VoiceChatPage] Erreur lors de stopRecorder: $e');
+        rethrow;
+      }
       
       // Vérifier que le path n'est pas null ou vide
       if (path == null || path.isEmpty) {
         throw Exception('Le chemin du fichier audio est vide');
       }
+      
+      print('✅ [VoiceChatPage] Enregistrement arrêté: $path');
 
       // Attendre un peu plus longtemps pour que le fichier soit complètement écrit
       await Future.delayed(const Duration(milliseconds: 300));
@@ -462,20 +539,42 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
         throw Exception('Le fichier audio est vide. Assurez-vous d\'avoir parlé pendant l\'enregistrement.');
       }
 
-      // Fermer le recorder
-      await _recorder.closeRecorder();
-      _recorderInitialized = false;
+      // Fermer le recorder proprement après l'enregistrement
+      // On le rouvrira au prochain enregistrement
+      try {
+        // Attendre un peu avant de fermer pour s'assurer que tout est écrit
+        await Future.delayed(const Duration(milliseconds: 100));
+        await _recorder.closeRecorder();
+        _recorderInitialized = false;
+        print('✅ [VoiceChatPage] Recorder fermé proprement');
+      } catch (e) {
+        print('⚠️ [VoiceChatPage] Erreur lors de la fermeture du recorder: $e');
+        // Réinitialiser le flag même en cas d'erreur
+        _recorderInitialized = false;
+      }
 
       return audioFile;
     } catch (e) {
-      // Fermer le recorder en cas d'erreur
+      print('❌ [VoiceChatPage] Erreur dans stopRecording: $e');
+      // En cas d'erreur, on essaie de nettoyer le recorder
       try {
+        // Essayer d'arrêter si en cours
+        try {
+          if (await _recorder.isRecording) {
+            await _recorder.stopRecorder();
+          }
+        } catch (_) {
+          // Ignorer
+        }
+        // Fermer le recorder pour le réinitialiser
         if (_recorderInitialized) {
           await _recorder.closeRecorder();
           _recorderInitialized = false;
+          print('✅ [VoiceChatPage] Recorder fermé après erreur');
         }
       } catch (_) {
-        // Ignorer les erreurs de fermeture
+        // Ignorer les erreurs de nettoyage
+        _recorderInitialized = false; // Réinitialiser le flag quand même
       }
       rethrow;
     }
