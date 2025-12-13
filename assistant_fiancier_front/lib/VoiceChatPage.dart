@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
@@ -26,10 +27,14 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
   final ScrollController _scrollController = ScrollController();
 
   late FlutterSoundRecorder _recorder;
+  late FlutterSoundPlayer _player;
   bool _isRecording = false;
   bool _isListening = false;
   bool _isTyping = false;
   bool _recorderInitialized = false;
+  bool _playerInitialized = false;
+  bool _isPlaying = false;
+  String? _currentlyPlayingMessageId;
 
   late AnimationController _pulseController;
   late AnimationController _waveController;
@@ -65,8 +70,9 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
       timestamp: DateTime.now(),
     ));
 
-    // 🔹 Initialiser le recorder
+    // 🔹 Initialiser le recorder et le player
     _recorder = FlutterSoundRecorder();
+    _player = FlutterSoundPlayer();
   }
 
   void _checkAuth() async {
@@ -83,11 +89,17 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
   }
 
   @override
-  void dispose() {
+  void dispose() async {
     _textController.dispose();
     _scrollController.dispose();
     _pulseController.dispose();
     _waveController.dispose();
+    if (_recorderInitialized) {
+      await _recorder.closeRecorder();
+    }
+    if (_playerInitialized) {
+      await _player.closePlayer();
+    }
     super.dispose();
   }
 
@@ -147,14 +159,15 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
         throw Exception('Le fichier audio est vide (0 bytes). Veuillez réessayer.');
       }
 
-      // Affiche le message "envoi audio"
+      // Affiche un message audio de l'utilisateur
       if (!mounted) return;
       
       setState(() {
         _messages.add(Message(
-          text: "…envoi de l'audio…",
+          text: "🎤 Audio",
           isUser: true,
           timestamp: DateTime.now(),
+          isAudio: true,
         ));
       });
       
@@ -173,35 +186,27 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
 
       if (!mounted) return;
 
-      // Extraire la réponse texte du JSON ChatAnswerDto
+      // Extraire l'audio Base64 de la réponse
+      final audioBase64 = response['audioBase64'] as String?;
       final answerText = response['answerText'] as String? ?? 'Réponse non disponible';
 
       setState(() {
-        // Supprimer le message "envoi audio"
-        if (_messages.isNotEmpty && _messages.last.text == "…envoi de l'audio…") {
-          _messages.removeLast();
-        }
-
-        // Ajouter la transcription de l'utilisateur
-        final transcript = response['transcript'] as String?;
-        if (transcript != null && transcript.isNotEmpty) {
-          _messages.add(Message(
-            text: transcript,
-            isUser: true,
-            timestamp: DateTime.now(),
-          ));
-        }
-
-        // Ajouter la réponse de l'assistant
+        // Ajouter la réponse audio de l'assistant
         _messages.add(Message(
-          text: answerText,
+          text: "🎵 Réponse audio",
           isUser: false,
           timestamp: DateTime.now(),
+          isAudio: true,
+          audioBase64: audioBase64,
         ));
       });
 
       if (mounted) {
         _scrollToBottom();
+        // Jouer automatiquement l'audio de la réponse
+        if (audioBase64 != null && audioBase64.isNotEmpty) {
+          _playAudioFromBase64(audioBase64, _messages.length - 1);
+        }
       }
 
     } catch (e, stackTrace) {
@@ -236,10 +241,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
           _isRecording = false;
           _isListening = false;
           
-          // Supprimer le message "envoi audio" en cas d'erreur
-          if (_messages.isNotEmpty && _messages.last.text == "…envoi de l'audio…") {
-            _messages.removeLast();
-          }
+          // Ne rien supprimer, garder l'audio de l'utilisateur
 
           _messages.add(Message(
             text: errorMessage,
@@ -621,6 +623,9 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
   }
 
   Widget _buildMessageBubble(Message message) {
+    final messageId = message.timestamp.millisecondsSinceEpoch.toString();
+    final isCurrentlyPlaying = _currentlyPlayingMessageId == messageId && _isPlaying;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -674,13 +679,35 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
                       ),
                     ],
                   ),
-                  child: Text(
-                    message.text,
-                    style: TextStyle(
-                      color: message.isUser ? Colors.white : Colors.black87,
-                      fontSize: 15,
-                    ),
-                  ),
+                  child: message.isAudio && message.audioBase64 != null && !message.isUser
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                isCurrentlyPlaying ? Icons.pause : Icons.play_arrow,
+                                color: message.isUser ? Colors.white : const Color(0xFF4DD0E1),
+                                size: 28,
+                              ),
+                              onPressed: () => _playAudioFromBase64(message.audioBase64!, _messages.indexOf(message)),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isCurrentlyPlaying ? "Lecture en cours..." : "Réponse audio",
+                              style: TextStyle(
+                                color: message.isUser ? Colors.white : Colors.black87,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          message.text,
+                          style: TextStyle(
+                            color: message.isUser ? Colors.white : Colors.black87,
+                            fontSize: 15,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 4),
                 Padding(
@@ -715,6 +742,76 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
         ],
       ),
     );
+  }
+
+  Future<void> _playAudioFromBase64(String audioBase64, int messageIndex) async {
+    try {
+      final messageId = _messages[messageIndex].timestamp.millisecondsSinceEpoch.toString();
+      
+      // Si c'est le même message qui est en train de jouer, on arrête
+      if (_isPlaying && _currentlyPlayingMessageId == messageId) {
+        await _player.stopPlayer();
+        if (mounted) {
+          setState(() {
+            _isPlaying = false;
+            _currentlyPlayingMessageId = null;
+          });
+        }
+        return;
+      }
+      
+      // Décoder le Base64
+      final audioBytes = base64Decode(audioBase64);
+      
+      // Sauvegarder dans un fichier temporaire
+      final tempDir = await getTemporaryDirectory();
+      final audioFile = File('${tempDir.path}/response_audio_${DateTime.now().millisecondsSinceEpoch}.mp3');
+      await audioFile.writeAsBytes(audioBytes);
+      
+      print('🎵 [VoiceChatPage] Audio sauvegardé: ${audioFile.path} (${audioBytes.length} bytes)');
+      
+      // Initialiser le player si nécessaire
+      if (!_playerInitialized) {
+        await _player.openPlayer();
+        _playerInitialized = true;
+      }
+      
+      // Arrêter la lecture précédente si elle est en cours
+      if (_isPlaying) {
+        await _player.stopPlayer();
+      }
+      
+      // Mettre à jour l'état pour afficher l'indicateur de lecture
+      setState(() {
+        _isPlaying = true;
+        _currentlyPlayingMessageId = messageId;
+      });
+      
+      // Jouer l'audio
+      await _player.startPlayer(
+        fromURI: audioFile.path,
+        codec: Codec.mp3,
+        whenFinished: () {
+          if (mounted) {
+            setState(() {
+              _isPlaying = false;
+              _currentlyPlayingMessageId = null;
+            });
+          }
+          // Nettoyer le fichier temporaire après la lecture
+          audioFile.delete();
+        },
+      );
+      
+    } catch (e) {
+      print('❌ [VoiceChatPage] Erreur lors de la lecture audio: $e');
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _currentlyPlayingMessageId = null;
+        });
+      }
+    }
   }
 
   Widget _buildTypingIndicator() {
