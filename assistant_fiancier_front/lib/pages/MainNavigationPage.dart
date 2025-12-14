@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'DashboardPage.dart';
 import 'BudgetPage.dart';
 import 'EducationPage.dart';
+import 'ProfilePage.dart';
 import '../VoiceChatPage.dart';
 
 class MainNavigationPage extends StatefulWidget {
@@ -19,6 +20,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     const BudgetPage(),
     const EducationPage(),
     const VoiceChatPage(),
+    const ProfilePage(),
   ];
 
   @override
@@ -54,6 +56,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.chat),
             label: 'Assistant',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profil',
           ),
         ],
       ),
