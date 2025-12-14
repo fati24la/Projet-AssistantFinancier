@@ -1,0 +1,115 @@
+.user-list-container {
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.header button {
+  border-radius: 8px;
+  padding: 0 20px;
+  height: 40px;
+  font-weight: 600;
+}
+
+.search-container {
+  margin-bottom: 20px;
+}
+
+.search-field {
+  width: 100%;
+  max-width: 500px;
+}
+
+.search-field .mat-mdc-text-field-wrapper {
+  background-color: var(--bg-primary);
+  border-radius: 8px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.table-container {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.users-table {
+  width: 100%;
+}
+
+.users-table th {
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  padding: 16px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.users-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.users-table tr:hover td {
+  background-color: var(--bg-secondary);
+}
+
+.users-table tr:last-child td {
+  border-bottom: none;
+}
+
+mat-chip {
+  font-weight: 500;
+  font-size: 12px;
+  padding: 4px 12px;
+  min-height: 24px;
+}
+
+mat-icon-button {
+  transition: all 0.2s ease;
+}
+
+mat-icon-button:hover {
+  transform: scale(1.1);
+}
+
+mat-paginator {
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .search-field {
+    max-width: 100%;
+  }
+}

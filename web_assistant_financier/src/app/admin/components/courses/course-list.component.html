@@ -1,0 +1,103 @@
+<div class="course-list-container">
+  <div class="header">
+    <h1>Gestion des cours</h1>
+    <button mat-raised-button color="primary" (click)="createCourse()" class="new-course-btn">
+      <mat-icon>add</mat-icon>
+      <span>Nouveau cours</span>
+    </button>
+  </div>
+
+  <div class="filters">
+    <mat-form-field appearance="outline">
+      <mat-label>Catégorie</mat-label>
+      <mat-select [formControl]="categoryFilter">
+        <mat-option value="">Toutes</mat-option>
+        <mat-option *ngFor="let cat of categories" [value]="cat">{{ cat }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Langue</mat-label>
+      <mat-select [formControl]="languageFilter">
+        <mat-option value="">Toutes</mat-option>
+        <mat-option *ngFor="let lang of languages" [value]="lang">{{ lang }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Statut</mat-label>
+      <mat-select [formControl]="statusFilter">
+        <mat-option value="">Tous</mat-option>
+        <mat-option value="true">Actif</mat-option>
+        <mat-option value="false">Inactif</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="!isLoading" class="table-container">
+    <table mat-table [dataSource]="courses" class="courses-table">
+      <ng-container matColumnDef="title">
+        <th mat-header-cell *matHeaderCellDef>Titre</th>
+        <td mat-cell *matCellDef="let course">{{ course.title }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="category">
+        <th mat-header-cell *matHeaderCellDef>Catégorie</th>
+        <td mat-cell *matCellDef="let course">{{ course.category }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="language">
+        <th mat-header-cell *matHeaderCellDef>Langue</th>
+        <td mat-cell *matCellDef="let course">{{ course.language }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="difficulty">
+        <th mat-header-cell *matHeaderCellDef>Difficulté</th>
+        <td mat-cell *matCellDef="let course">{{ course.difficulty }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="duration">
+        <th mat-header-cell *matHeaderCellDef>Durée (min)</th>
+        <td mat-cell *matCellDef="let course">{{ course.durationMinutes }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Statut</th>
+        <td mat-cell *matCellDef="let course">
+          <mat-chip [color]="course.isActive ? 'primary' : ''" [class.inactive-chip]="!course.isActive">
+            {{ course.isActive ? 'Actif' : 'Inactif' }}
+          </mat-chip>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let course" class="actions-cell">
+          <div class="action-buttons">
+            <button mat-icon-button color="primary" (click)="editCourse(course)" title="Modifier" class="action-btn">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="accent" (click)="viewQuizzes(course)" title="Gérer les quiz" class="action-btn">
+              <mat-icon>quiz</mat-icon>
+            </button>
+            <button mat-icon-button [color]="course.isActive ? 'warn' : 'primary'" (click)="toggleStatus(course)" 
+                    [title]="course.isActive ? 'Désactiver' : 'Activer'" class="action-btn">
+              <mat-icon>{{ course.isActive ? 'block' : 'check_circle' }}</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteCourse(course)" title="Supprimer" class="action-btn">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+</div>
+

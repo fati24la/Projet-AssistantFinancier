@@ -1,0 +1,155 @@
+<div class="quiz-management-container">
+  <h2 mat-dialog-title>Gestion des quiz - {{ course.title }}</h2>
+  
+  <mat-dialog-content>
+    <div class="quiz-section">
+      <div class="section-header">
+        <h3>Ajouter/Modifier un quiz</h3>
+        <button *ngIf="editingQuizId" mat-icon-button (click)="cancelEdit()" color="warn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="quizForm" class="quiz-form">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Question</mat-label>
+          <textarea matInput formControlName="question" rows="3" required></textarea>
+          <mat-error *ngIf="quizForm.get('question')?.hasError('required')">
+            La question est requise
+          </mat-error>
+        </mat-form-field>
+
+        <div class="options-section">
+          <div class="options-header">
+            <label>Options de réponse</label>
+            <button mat-icon-button type="button" (click)="addOption()" color="primary">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+
+          <div formArrayName="options" class="options-list">
+            <div *ngFor="let option of optionsArray.controls; let i = index" class="option-item">
+              <mat-form-field appearance="outline" class="option-field">
+                <mat-label>Option {{ i + 1 }}</mat-label>
+                <input matInput [formControl]="$any(option)" required>
+                <button
+                  *ngIf="optionsArray.length > 2"
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  (click)="removeOption(i)"
+                  color="warn">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </mat-form-field>
+              <button
+                *ngIf="quizForm.get('correctAnswerIndex')?.value === i"
+                mat-icon-button
+                [color]="'primary'"
+                [matTooltip]="'Réponse correcte'"
+                disabled>
+                <mat-icon>check_circle</mat-icon>
+              </button>
+              <button
+                *ngIf="quizForm.get('correctAnswerIndex')?.value !== i"
+                mat-icon-button
+                type="button"
+                (click)="quizForm.patchValue({ correctAnswerIndex: i })"
+                [matTooltip]="'Marquer comme réponse correcte'">
+                <mat-icon>radio_button_unchecked</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Index de la réponse correcte</mat-label>
+          <input matInput type="number" formControlName="correctAnswerIndex" required min="0">
+          <mat-error *ngIf="quizForm.get('correctAnswerIndex')?.hasError('required')">
+            L'index est requis
+          </mat-error>
+          <mat-error *ngIf="quizForm.get('correctAnswerIndex')?.hasError('min')">
+            L'index doit être supérieur ou égal à 0
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Explication (optionnelle)</mat-label>
+          <textarea matInput formControlName="explanation" rows="2"></textarea>
+        </mat-form-field>
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="button"
+          (click)="saveQuiz()"
+          [disabled]="quizForm.invalid || isLoading"
+          class="save-button">
+          <mat-spinner *ngIf="isLoading" diameter="20" class="spinner"></mat-spinner>
+          <span *ngIf="!isLoading">{{ editingQuizId ? 'Modifier' : 'Ajouter' }} le quiz</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="quizzes-list-section">
+      <h3>Quiz existants ({{ quizzes.length }})</h3>
+
+      <div *ngIf="isLoading" class="loading-container">
+        <mat-spinner></mat-spinner>
+      </div>
+
+      <div *ngIf="!isLoading && quizzes.length === 0" class="empty-state">
+        <mat-icon>quiz</mat-icon>
+        <p>Aucun quiz pour ce cours</p>
+      </div>
+
+      <table *ngIf="!isLoading && quizzes.length > 0" mat-table [dataSource]="quizzes" class="quizzes-table">
+        <ng-container matColumnDef="question">
+          <th mat-header-cell *matHeaderCellDef>Question</th>
+          <td mat-cell *matCellDef="let quiz">{{ quiz.question }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="options">
+          <th mat-header-cell *matHeaderCellDef>Options</th>
+          <td mat-cell *matCellDef="let quiz">
+            <div class="options-chips">
+              <mat-chip *ngFor="let option of quiz.options; let i = index" 
+                        [color]="i === quiz.correctAnswerIndex ? 'primary' : 'basic'">
+                {{ option }}
+              </mat-chip>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="correctAnswer">
+          <th mat-header-cell *matHeaderCellDef>Réponse correcte</th>
+          <td mat-cell *matCellDef="let quiz">
+            <mat-chip color="primary">
+              Option {{ quiz.correctAnswerIndex! + 1 }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let quiz">
+            <button mat-icon-button color="primary" (click)="startEdit(quiz)" title="Modifier">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteQuiz(quiz.id!)" title="Supprimer">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions>
+    <button mat-button (click)="close()">Fermer</button>
+  </mat-dialog-actions>
+</div>
+

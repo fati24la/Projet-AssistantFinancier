@@ -1,0 +1,151 @@
+.course-list-container {
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.header button {
+  border-radius: 8px;
+  padding: 0 20px;
+  height: 40px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.new-course-btn mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.filters mat-form-field {
+  width: 100%;
+}
+
+.filters .mat-mdc-text-field-wrapper {
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.table-container {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.courses-table {
+  width: 100%;
+}
+
+.courses-table th {
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  padding: 16px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.courses-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.courses-table tr:hover td {
+  background-color: var(--bg-secondary);
+}
+
+.courses-table tr:last-child td {
+  border-bottom: none;
+}
+
+mat-chip {
+  font-weight: 500;
+  font-size: 12px;
+  padding: 4px 12px;
+  min-height: 24px;
+}
+
+mat-chip.inactive-chip {
+  background-color: #e5e7eb !important;
+  color: #6b7280 !important;
+}
+
+.actions-cell {
+  padding: 8px 16px !important;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  transition: all 0.2s ease;
+  width: 36px;
+  height: 36px;
+}
+
+.action-btn:hover {
+  transform: scale(1.15);
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.action-btn mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 768px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}

@@ -1,0 +1,105 @@
+<div class="notifications-container">
+  <h1>Notifications système</h1>
+
+  <div class="content-grid">
+    <mat-card class="send-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>send</mat-icon>
+          Envoyer une notification
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="notificationForm" (ngSubmit)="sendNotification()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Titre</mat-label>
+            <input matInput formControlName="title" required placeholder="Ex: Nouvelle fonctionnalité">
+            <mat-icon matPrefix>title</mat-icon>
+            <mat-error *ngIf="notificationForm.get('title')?.hasError('required')">
+              Le titre est requis
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Message</mat-label>
+            <textarea matInput formControlName="message" rows="6" required placeholder="Votre message ici..."></textarea>
+            <mat-icon matPrefix>message</mat-icon>
+            <mat-hint>{{ notificationForm.get('message')?.value?.length || 0 }} caractères</mat-hint>
+            <mat-error *ngIf="notificationForm.get('message')?.hasError('required')">
+              Le message est requis
+            </mat-error>
+          </mat-form-field>
+
+          <div class="templates">
+            <h3>
+              <mat-icon>description</mat-icon>
+              Modèles prédéfinis
+            </h3>
+            <div class="template-buttons">
+              <button
+                *ngFor="let template of templates"
+                mat-stroked-button
+                type="button"
+                (click)="useTemplate(template)"
+                class="template-btn">
+                <mat-icon>content_copy</mat-icon>
+                {{ template.title }}
+              </button>
+            </div>
+          </div>
+
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="notificationForm.invalid || isSending"
+            class="send-button">
+            <mat-spinner *ngIf="isSending" diameter="20" class="spinner"></mat-spinner>
+            <mat-icon *ngIf="!isSending">send</mat-icon>
+            <span *ngIf="!isSending">Envoyer à tous les utilisateurs</span>
+            <span *ngIf="isSending">Envoi en cours...</span>
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="history-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>history</mat-icon>
+          Historique
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="isLoading" class="loading-container">
+          <mat-spinner></mat-spinner>
+        </div>
+
+        <div *ngIf="!isLoading">
+          <div *ngIf="history.length === 0" class="empty-state">
+            <mat-icon>notifications_off</mat-icon>
+            <p>Aucune notification envoyée</p>
+            <span>Les notifications que vous envoyez apparaîtront ici</span>
+          </div>
+
+          <div *ngIf="history.length > 0" class="history-list">
+            <div *ngFor="let notification of history" class="history-item">
+              <div class="history-header">
+                <h4>{{ notification.title }}</h4>
+                <span class="date">{{ formatDate(notification.sentAt) }}</span>
+              </div>
+              <p class="message">{{ notification.message }}</p>
+              <div class="history-footer">
+                <mat-chip color="primary">
+                  <mat-icon>people</mat-icon>
+                  {{ notification.recipientsCount }} destinataires
+                </mat-chip>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+

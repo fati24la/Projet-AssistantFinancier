@@ -16,7 +16,7 @@ WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'testuser');
 -- Obtenir l'ID de l'utilisateur créé ou existant
 -- Si aucun utilisateur n'existe, cette variable sera NULL
 -- Dans ce cas, vous DEVEZ créer l'utilisateur d'abord via l'application ou SQL
-SET @user_id = (SELECT id FROM users WHERE username = 't' LIMIT 1);
+SET @user_id = (SELECT id FROM users WHERE username = 'testuser' LIMIT 1);
 
 -- Si @user_id est NULL, le script échouera
 -- Solution : Créez l'utilisateur d'abord, puis réexécutez ce script

@@ -1,0 +1,171 @@
+.quiz-management-container {
+  min-width: 800px;
+  max-width: 1000px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+mat-dialog-content {
+  max-height: calc(90vh - 200px);
+  overflow-y: auto;
+  padding: 24px 0;
+}
+
+.quiz-section {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.quiz-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.options-section {
+  margin: 16px 0;
+}
+
+.options-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.options-header label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.option-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.option-field {
+  flex: 1;
+}
+
+.save-button {
+  width: 100%;
+  height: 48px;
+  font-weight: 600;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.spinner {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.quizzes-list-section {
+  margin-top: 32px;
+}
+
+.quizzes-list-section h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-state mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 16px;
+  margin: 0;
+}
+
+.quizzes-table {
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.quizzes-table th {
+  font-weight: 600;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  padding: 16px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quizzes-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.options-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+mat-dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  background: #f8fafc;
+}
+

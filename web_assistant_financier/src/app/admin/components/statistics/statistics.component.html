@@ -1,0 +1,59 @@
+<div class="statistics-container">
+  <div class="header">
+    <h1>Statistiques détaillées</h1>
+    <div class="export-buttons">
+      <button mat-raised-button color="primary" (click)="exportData('csv')">
+        <mat-icon>download</mat-icon>
+        Exporter CSV
+      </button>
+      <button mat-raised-button color="accent" (click)="exportData('pdf')">
+        <mat-icon>picture_as_pdf</mat-icon>
+        Exporter PDF
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="!isLoading" class="statistics-content">
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>Statistiques par cours</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <canvas baseChart
+          [data]="courseStatsData"
+          [options]="courseStatsOptions"
+          type="bar">
+        </canvas>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="table-card">
+      <mat-card-header>
+        <mat-card-title>Détails des cours</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Cours</th>
+              <th>Complétions</th>
+              <th>Score moyen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let stat of courseStatistics">
+              <td>{{ stat.courseTitle }}</td>
+              <td>{{ stat.completions }}</td>
+              <td>{{ stat.averageScore.toFixed(1) }}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+

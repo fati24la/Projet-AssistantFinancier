@@ -3,6 +3,7 @@ package com.assistantfinancer.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
@@ -22,6 +23,13 @@ public class User {
     private String email;
 
     private String password;
+
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<Budget> budgets;

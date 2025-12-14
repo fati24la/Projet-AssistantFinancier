@@ -53,15 +53,29 @@ public class AuthController {
     // ---------------- LOGIN ----------------
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        System.out.println("🔐 [AuthController] Tentative de connexion pour: " + request.getUsername());
 
         User user = userRepository.findByUsername(request.getUsername())
                 .orElse(null);
 
-        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return ResponseEntity.status(401).body("Invalid credentials");
+        if (user == null) {
+            System.out.println("❌ [AuthController] Utilisateur non trouvé: " + request.getUsername());
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
         }
 
+        System.out.println("✅ [AuthController] Utilisateur trouvé: " + user.getUsername());
+        System.out.println("🔑 [AuthController] Vérification du mot de passe...");
+
+        boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPassword());
+        
+        if (!passwordMatches) {
+            System.out.println("❌ [AuthController] Mot de passe incorrect pour: " + request.getUsername());
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
+        }
+
+        System.out.println("✅ [AuthController] Mot de passe correct, génération du token...");
         String token = jwtService.generateToken(user.getUsername());
+        System.out.println("✅ [AuthController] Token généré avec succès pour: " + user.getUsername());
 
         return ResponseEntity.ok(Map.of(
                 "token", token,
