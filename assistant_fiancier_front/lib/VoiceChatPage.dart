@@ -35,6 +35,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
   bool _playerInitialized = false;
   bool _isPlaying = false;
   String? _currentlyPlayingMessageId;
+  int? _currentUserId; // ID de l'utilisateur actuellement connecté
 
   late AnimationController _pulseController;
   late AnimationController _waveController;
@@ -64,14 +65,37 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
     _recorder = FlutterSoundRecorder();
     _player = FlutterSoundPlayer();
 
-    // Charger les messages sauvegardés
-    _loadMessages();
+    // Charger le userId et les messages sauvegardés
+    _initializeUserAndLoadMessages();
   }
 
-  // Charger les messages depuis le stockage local
-  Future<void> _loadMessages() async {
+  // Initialiser l'utilisateur et charger ses messages
+  Future<void> _initializeUserAndLoadMessages() async {
     try {
-      final savedMessages = await StorageService.loadMessages();
+      // Récupérer le userId de l'utilisateur connecté
+      _currentUserId = await StorageService.getUserId();
+      if (_currentUserId == null) {
+        print('❌ [VoiceChatPage] Aucun userId trouvé');
+        return;
+      }
+      print('✅ [VoiceChatPage] userId chargé: $_currentUserId');
+      
+      // Charger les messages de cet utilisateur
+      await _loadMessages();
+    } catch (e) {
+      print('❌ [VoiceChatPage] Erreur lors de l\'initialisation: $e');
+    }
+  }
+
+  // Charger les messages depuis le stockage local pour l'utilisateur actuel
+  Future<void> _loadMessages() async {
+    if (_currentUserId == null) {
+      print('❌ [VoiceChatPage] Impossible de charger les messages : userId est null');
+      return;
+    }
+
+    try {
+      final savedMessages = await StorageService.loadMessages(_currentUserId!);
       if (savedMessages.isNotEmpty) {
         setState(() {
           _messages.clear();
@@ -83,7 +107,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _scrollToBottom();
         });
-        print('✅ [VoiceChatPage] ${_messages.length} messages chargés');
+        print('✅ [VoiceChatPage] ${_messages.length} messages chargés pour userId: $_currentUserId');
       } else {
         // Si aucun message sauvegardé, ajouter le message d'accueil
         setState(() {
@@ -109,12 +133,17 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
     }
   }
 
-  // Sauvegarder les messages dans le stockage local
+  // Sauvegarder les messages dans le stockage local pour l'utilisateur actuel
   Future<void> _saveMessages() async {
+    if (_currentUserId == null) {
+      print('❌ [VoiceChatPage] Impossible de sauvegarder les messages : userId est null');
+      return;
+    }
+
     try {
       final messagesJson = _messages.map((msg) => msg.toJson()).toList();
-      await StorageService.saveMessages(messagesJson);
-      print('✅ [VoiceChatPage] ${_messages.length} messages sauvegardés');
+      await StorageService.saveMessages(messagesJson, _currentUserId!);
+      print('✅ [VoiceChatPage] ${_messages.length} messages sauvegardés pour userId: $_currentUserId');
     } catch (e) {
       print('❌ [VoiceChatPage] Erreur lors de la sauvegarde des messages: $e');
     }
@@ -144,9 +173,9 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
     );
 
     if (confirm == true) {
-      // Effacer les données d'authentification et les messages
+      // Effacer uniquement les données d'authentification
+      // NE PAS effacer les messages pour que l'utilisateur garde sa conversation
       await StorageService.clearAuth();
-      await StorageService.clearMessages();
       
       // Rediriger vers la page de login
       if (mounted) {

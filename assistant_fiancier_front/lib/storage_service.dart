@@ -56,34 +56,41 @@ class StorageService {
     return token != null && token.isNotEmpty;
   }
 
-  // Sauvegarder les messages de conversation
-  static Future<void> saveMessages(List<Map<String, dynamic>> messages) async {
+  // Sauvegarder les messages de conversation pour un utilisateur spécifique
+  static Future<void> saveMessages(List<Map<String, dynamic>> messages, int userId) async {
     final prefs = await SharedPreferences.getInstance();
-    // Convertir la liste en JSON string
+    // Convertir la liste en JSON string avec une clé spécifique à l'utilisateur
     final messagesJson = jsonEncode(messages);
-    await prefs.setString('conversation_messages', messagesJson);
+    final key = 'conversation_messages_$userId';
+    await prefs.setString(key, messagesJson);
+    print('✅ [StorageService] Messages sauvegardés pour userId: $userId');
   }
 
-  // Charger les messages de conversation
-  static Future<List<Map<String, dynamic>>> loadMessages() async {
+  // Charger les messages de conversation pour un utilisateur spécifique
+  static Future<List<Map<String, dynamic>>> loadMessages(int userId) async {
     final prefs = await SharedPreferences.getInstance();
-    final messagesJson = prefs.getString('conversation_messages');
+    final key = 'conversation_messages_$userId';
+    final messagesJson = prefs.getString(key);
     if (messagesJson == null || messagesJson.isEmpty) {
+      print('📭 [StorageService] Aucun message trouvé pour userId: $userId');
       return [];
     }
     try {
       final List<dynamic> decoded = jsonDecode(messagesJson);
+      print('✅ [StorageService] ${decoded.length} messages chargés pour userId: $userId');
       return decoded.cast<Map<String, dynamic>>();
     } catch (e) {
-      print('Erreur lors du chargement des messages: $e');
+      print('❌ [StorageService] Erreur lors du chargement des messages: $e');
       return [];
     }
   }
 
-  // Effacer les messages de conversation
-  static Future<void> clearMessages() async {
+  // Effacer les messages de conversation pour un utilisateur spécifique
+  static Future<void> clearMessages(int userId) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('conversation_messages');
+    final key = 'conversation_messages_$userId';
+    await prefs.remove(key);
+    print('🗑️ [StorageService] Messages effacés pour userId: $userId');
   }
 }
 
