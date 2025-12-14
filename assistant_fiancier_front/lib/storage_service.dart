@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StorageService {
@@ -53,6 +54,36 @@ class StorageService {
   static Future<bool> isLoggedIn() async {
     final token = await getToken();
     return token != null && token.isNotEmpty;
+  }
+
+  // Sauvegarder les messages de conversation
+  static Future<void> saveMessages(List<Map<String, dynamic>> messages) async {
+    final prefs = await SharedPreferences.getInstance();
+    // Convertir la liste en JSON string
+    final messagesJson = jsonEncode(messages);
+    await prefs.setString('conversation_messages', messagesJson);
+  }
+
+  // Charger les messages de conversation
+  static Future<List<Map<String, dynamic>>> loadMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    final messagesJson = prefs.getString('conversation_messages');
+    if (messagesJson == null || messagesJson.isEmpty) {
+      return [];
+    }
+    try {
+      final List<dynamic> decoded = jsonDecode(messagesJson);
+      return decoded.cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Erreur lors du chargement des messages: $e');
+      return [];
+    }
+  }
+
+  // Effacer les messages de conversation
+  static Future<void> clearMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('conversation_messages');
   }
 }
 

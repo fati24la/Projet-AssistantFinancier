@@ -14,4 +14,28 @@ class Message {
     this.audioBase64,
     this.audioFilePath,
   });
+
+  // Convertir Message en Map pour la sérialisation JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'text': text,
+      'isUser': isUser,
+      'timestamp': timestamp.toIso8601String(),
+      'isAudio': isAudio,
+      'audioBase64': audioBase64,
+      'audioFilePath': audioFilePath,
+    };
+  }
+
+  // Créer un Message à partir d'un Map (désérialisation JSON)
+  factory Message.fromJson(Map<String, dynamic> json) {
+    return Message(
+      text: json['text'] as String,
+      isUser: json['isUser'] as bool,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      isAudio: json['isAudio'] as bool? ?? false,
+      audioBase64: json['audioBase64'] as String?,
+      audioFilePath: json['audioFilePath'] as String?,
+    );
+  }
 }

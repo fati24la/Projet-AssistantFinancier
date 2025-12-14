@@ -44,9 +44,6 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
   void initState() {
     super.initState();
 
-    // Vérifier si l'utilisateur est connecté
-    _checkAuth();
-
     // Animation pour le bouton vocal
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
@@ -63,26 +60,100 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
       vsync: this,
     );
 
-    // Message d'accueil
-    _messages.add(Message(
-      text: "Bonjour ! Je suis votre assistant financier. Comment puis-je vous aider aujourd'hui ?",
-      isUser: false,
-      timestamp: DateTime.now(),
-    ));
-
     // 🔹 Initialiser le recorder et le player
     _recorder = FlutterSoundRecorder();
     _player = FlutterSoundPlayer();
+
+    // Charger les messages sauvegardés
+    _loadMessages();
   }
 
-  void _checkAuth() async {
-    final isLoggedIn = await StorageService.isLoggedIn();
-    if (!isLoggedIn) {
-      // Rediriger vers la page de login si non connecté
+  // Charger les messages depuis le stockage local
+  Future<void> _loadMessages() async {
+    try {
+      final savedMessages = await StorageService.loadMessages();
+      if (savedMessages.isNotEmpty) {
+        setState(() {
+          _messages.clear();
+          for (var msgJson in savedMessages) {
+            _messages.add(Message.fromJson(msgJson));
+          }
+        });
+        // Faire défiler vers le bas après le chargement
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToBottom();
+        });
+        print('✅ [VoiceChatPage] ${_messages.length} messages chargés');
+      } else {
+        // Si aucun message sauvegardé, ajouter le message d'accueil
+        setState(() {
+          _messages.add(Message(
+            text: "Bonjour ! Je suis votre assistant financier. Comment puis-je vous aider aujourd'hui ?",
+            isUser: false,
+            timestamp: DateTime.now(),
+          ));
+        });
+        await _saveMessages();
+      }
+    } catch (e) {
+      print('❌ [VoiceChatPage] Erreur lors du chargement des messages: $e');
+      // En cas d'erreur, ajouter le message d'accueil
+      setState(() {
+        _messages.add(Message(
+          text: "Bonjour ! Je suis votre assistant financier. Comment puis-je vous aider aujourd'hui ?",
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      await _saveMessages();
+    }
+  }
+
+  // Sauvegarder les messages dans le stockage local
+  Future<void> _saveMessages() async {
+    try {
+      final messagesJson = _messages.map((msg) => msg.toJson()).toList();
+      await StorageService.saveMessages(messagesJson);
+      print('✅ [VoiceChatPage] ${_messages.length} messages sauvegardés');
+    } catch (e) {
+      print('❌ [VoiceChatPage] Erreur lors de la sauvegarde des messages: $e');
+    }
+  }
+
+  // Méthode de déconnexion
+  Future<void> _logout() async {
+    // Afficher une boîte de dialogue de confirmation
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Déconnexion'),
+          content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Déconnexion'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      // Effacer les données d'authentification et les messages
+      await StorageService.clearAuth();
+      await StorageService.clearMessages();
+      
+      // Rediriger vers la page de login
       if (mounted) {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => false, // Supprimer toutes les routes précédentes
         );
       }
     }
@@ -172,6 +243,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
         ));
       });
       
+      _saveMessages();
       _scrollToBottom();
 
       // Appel au backend (le userId est extrait du token côté backend)
@@ -202,6 +274,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
         ));
       });
 
+      _saveMessages();
       if (mounted) {
         _scrollToBottom();
         // Jouer automatiquement l'audio de la réponse
@@ -250,6 +323,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
             timestamp: DateTime.now(),
           ));
         });
+        _saveMessages();
         
         if (mounted && shouldLogout) {
           Navigator.pushReplacement(
@@ -276,6 +350,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
       ));
     });
 
+    _saveMessages();
     _textController.clear();
     _scrollToBottom();
 
@@ -304,6 +379,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
         ));
       });
 
+      _saveMessages();
       if (mounted) {
         _scrollToBottom();
       }
@@ -341,6 +417,7 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
             isAudio: false,
           ));
         });
+        _saveMessages();
         
         if (mounted && shouldLogout) {
           Navigator.pushReplacement(
@@ -391,13 +468,31 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
       // Initialiser le recorder s'il n'est pas déjà initialisé
       if (!_recorderInitialized) {
         try {
+          // S'assurer que le recorder est complètement fermé avant de l'ouvrir
+          try {
+            await _recorder.closeRecorder();
+            await Future.delayed(const Duration(milliseconds: 100));
+          } catch (_) {
+            // Ignorer si déjà fermé
+          }
+          
           await _recorder.openRecorder();
           _recorderInitialized = true;
           print('✅ [VoiceChatPage] Recorder initialisé');
         } catch (e) {
           print('❌ [VoiceChatPage] Erreur lors de l\'initialisation du recorder: $e');
-          // Si le recorder est déjà ouvert, on peut ignorer l'erreur
-          _recorderInitialized = true;
+          // Essayer une fois de plus avec un délai plus long
+          try {
+            await Future.delayed(const Duration(milliseconds: 300));
+            await _recorder.closeRecorder();
+            await Future.delayed(const Duration(milliseconds: 200));
+            await _recorder.openRecorder();
+            _recorderInitialized = true;
+            print('✅ [VoiceChatPage] Recorder initialisé après retry');
+          } catch (e2) {
+            print('❌ [VoiceChatPage] Erreur lors du retry d\'initialisation: $e2');
+            rethrow;
+          }
         }
       }
 
@@ -429,18 +524,42 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
         print('✅ [VoiceChatPage] Enregistrement démarré: $path');
       } catch (e) {
         print('❌ [VoiceChatPage] Erreur lors du démarrage de l\'enregistrement: $e');
-        // Si le démarrage échoue, essayer de réinitialiser le recorder
+        // Si le démarrage échoue, essayer de réinitialiser complètement le recorder
         try {
-          await _recorder.closeRecorder();
-          await Future.delayed(const Duration(milliseconds: 200));
+          print('🔄 [VoiceChatPage] Tentative de réinitialisation complète...');
+          // Fermer complètement
+          try {
+            if (await _recorder.isRecording) {
+              await _recorder.stopRecorder();
+            }
+          } catch (_) {
+            // Ignorer
+          }
+          
+          try {
+            await _recorder.closeRecorder();
+          } catch (_) {
+            // Ignorer si déjà fermé
+          }
+          
+          _recorderInitialized = false;
+          await Future.delayed(const Duration(milliseconds: 300));
+          
+          // Rouvrir
           await _recorder.openRecorder();
+          _recorderInitialized = true;
+          
+          await Future.delayed(const Duration(milliseconds: 100));
+          
+          // Réessayer de démarrer
           await _recorder.startRecorder(
             toFile: path,
             codec: Codec.aacADTS,
           );
-          print('✅ [VoiceChatPage] Enregistrement démarré après réinitialisation');
+          print('✅ [VoiceChatPage] Enregistrement démarré après réinitialisation complète');
         } catch (e2) {
-          print('❌ [VoiceChatPage] Erreur lors de la réinitialisation: $e2');
+          print('❌ [VoiceChatPage] Erreur lors de la réinitialisation complète: $e2');
+          _recorderInitialized = false;
           rethrow;
         }
       }
@@ -602,32 +721,50 @@ class _VoiceChatPageState extends State<VoiceChatPage> with TickerProviderStateM
               ),
             ),
             const SizedBox(width: 12),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Assistant Financier',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Assistant Financier',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                Text(
-                  'En ligne',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white70,
+                  Text(
+                    'En ligne',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white70,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
         actions: [
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () {},
+            onSelected: (value) {
+              if (value == 'logout') {
+                _logout();
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Déconnexion'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

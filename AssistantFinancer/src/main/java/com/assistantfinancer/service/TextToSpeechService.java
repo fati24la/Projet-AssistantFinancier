@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class TextToSpeechService {
 
-    private static final String OPENAI_API_KEY = "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"; // TODO: mets ta clé
+    private static final String OPENAI_API_KEY = "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"; // TODO: mets ta clé
     private static final String TTS_URL = "https://api.openai.com/v1/audio/speech";
 
     private final OkHttpClient client = new OkHttpClient.Builder()
