@@ -54,23 +54,29 @@ class _DashboardPageState extends State<DashboardPage> {
                   onRefresh: _loadDashboard,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildHeader(),
-                        const SizedBox(height: 24),
-                        _buildFinancialHealthScore(),
-                        const SizedBox(height: 24),
-                        _buildFinancialSummary(),
-                        const SizedBox(height: 24),
-                        _buildMonthlyChart(),
-                        const SizedBox(height: 24),
-                        _buildCategoryExpenses(),
-                        const SizedBox(height: 24),
-                        _buildActiveGoals(),
-                        const SizedBox(height: 24),
-                        _buildQuickActions(),
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildFinancialHealthScore(),
+                              const SizedBox(height: 16),
+                              _buildFinancialSummary(),
+                              const SizedBox(height: 16),
+                              _buildMonthlyChart(),
+                              const SizedBox(height: 16),
+                              _buildCategoryExpenses(),
+                              const SizedBox(height: 16),
+                              _buildActiveGoals(),
+                              const SizedBox(height: 16),
+                              _buildQuickActions(),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -80,53 +86,57 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4DD0E1), Color(0xFF26C6DA)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: Color(0xFF4DD0E1),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Tableau de bord',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Tableau de bord',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Niveau ${_dashboardData!.level} • ${_dashboardData!.totalPoints} points',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
+                    const SizedBox(height: 8),
+                    Text(
+                      'Niveau ${_dashboardData!.level} • ${_dashboardData!.totalPoints} points',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               Container(
-                padding: const EdgeInsets.all(12),
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.account_balance_wallet, color: Colors.white),
+                child: const Icon(
+                  Icons.account_balance_wallet,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -140,7 +150,7 @@ class _DashboardPageState extends State<DashboardPage> {
       scoreColor = Colors.green;
       scoreLabel = 'Excellent';
     } else if (score >= 60) {
-      scoreColor = Colors.blue;
+      scoreColor = const Color(0xFF4DD0E1);
       scoreLabel = 'Bon';
     } else if (score >= 40) {
       scoreColor = Colors.orange;
@@ -173,18 +183,19 @@ class _DashboardPageState extends State<DashboardPage> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: scoreColor.withOpacity(0.1),
+                  color: const Color(0xFF4DD0E1).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(
-                  scoreLabel,
+                child: const Text(
+                  'Bon',
                   style: TextStyle(
-                    color: scoreColor,
+                    color: Color(0xFF4DD0E1),
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -194,18 +205,20 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 120,
+            height: 140,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 SizedBox(
-                  width: 120,
-                  height: 120,
+                  width: 140,
+                  height: 140,
                   child: CircularProgressIndicator(
                     value: score / 100,
                     strokeWidth: 12,
                     backgroundColor: Colors.grey[200],
-                    valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF4DD0E1),
+                    ),
                   ),
                 ),
                 Column(
@@ -213,10 +226,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     Text(
                       score.toStringAsFixed(0),
-                      style: TextStyle(
-                        fontSize: 32,
+                      style: const TextStyle(
+                        fontSize: 36,
                         fontWeight: FontWeight.bold,
-                        color: scoreColor,
+                        color: Color(0xFF4DD0E1),
                       ),
                     ),
                     const Text(
@@ -243,7 +256,7 @@ class _DashboardPageState extends State<DashboardPage> {
           child: _buildSummaryCard(
             'Revenus',
             _dashboardData!.totalIncome,
-            Icons.trending_up,
+            Icons.show_chart,
             Colors.green,
           ),
         ),
@@ -262,7 +275,7 @@ class _DashboardPageState extends State<DashboardPage> {
             'Épargne',
             _dashboardData!.totalSavings,
             Icons.savings,
-            Colors.blue,
+            const Color(0xFF4DD0E1),
           ),
         ),
       ],
@@ -286,8 +299,8 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 12),
           Text(
             title,
             style: TextStyle(
@@ -295,12 +308,21 @@ class _DashboardPageState extends State<DashboardPage> {
               color: Colors.grey[600],
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
-            '${amount.toStringAsFixed(0)} MAD',
+            '${amount.toStringAsFixed(0)}',
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 2),
+          const Text(
+            'MAD',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
             ),
           ),
         ],
@@ -330,40 +352,39 @@ class _DashboardPageState extends State<DashboardPage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: Colors.black87,
             ),
           ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 200,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(show: false),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: _dashboardData!.monthlyData.asMap().entries.map((e) {
-                      return FlSpot(e.key.toDouble(), e.value.income);
-                    }).toList(),
-                    isCurved: true,
+            height: 100,
+            child: _dashboardData!.monthlyData.isEmpty
+                ? Container(
+                    height: 2,
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(vertical: 49),
                     color: Colors.green,
-                    barWidth: 3,
-                    dotData: FlDotData(show: false),
-                    belowBarData: BarAreaData(show: false),
+                  )
+                : LineChart(
+                    LineChartData(
+                      gridData: FlGridData(show: false),
+                      titlesData: FlTitlesData(show: false),
+                      borderData: FlBorderData(show: false),
+                      minY: 0,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: _dashboardData!.monthlyData.asMap().entries.map((e) {
+                            return FlSpot(e.key.toDouble(), e.value.income);
+                          }).toList(),
+                          isCurved: false,
+                          color: Colors.green,
+                          barWidth: 2,
+                          dotData: FlDotData(show: false),
+                          belowBarData: BarAreaData(show: false),
+                        ),
+                      ],
+                    ),
                   ),
-                  LineChartBarData(
-                    spots: _dashboardData!.monthlyData.asMap().entries.map((e) {
-                      return FlSpot(e.key.toDouble(), e.value.expenses);
-                    }).toList(),
-                    isCurved: true,
-                    color: Colors.red,
-                    barWidth: 3,
-                    dotData: FlDotData(show: false),
-                    belowBarData: BarAreaData(show: false),
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
