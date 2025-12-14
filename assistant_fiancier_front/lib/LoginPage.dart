@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'RegisterPage.dart';
-import 'VoiceChatPage.dart';
+import 'pages/MainNavigationPage.dart';
 import 'auth_service.dart';
 import 'storage_service.dart';
 
@@ -226,10 +226,10 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                     );
 
-                                    // Naviguer vers VoiceChatPage
+                                    // Naviguer vers MainNavigationPage
                                     Navigator.pushReplacement(
                                       context,
-                                      MaterialPageRoute(builder: (context) => const VoiceChatPage()),
+                                      MaterialPageRoute(builder: (context) => const MainNavigationPage()),
                                     );
                                   }
                                 } catch (e) {

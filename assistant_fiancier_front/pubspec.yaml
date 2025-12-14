@@ -35,6 +35,9 @@ dependencies:
   flutter_sound: ^9.3.3
   permission_handler: ^12.0.0
   shared_preferences: ^2.2.2
+  # Charts and UI
+  fl_chart: ^0.66.0
+  intl: ^0.19.0
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'LoginPage.dart';
-import 'VoiceChatPage.dart';
+import 'pages/MainNavigationPage.dart';
 import 'storage_service.dart';
 
 void main() {
@@ -64,6 +64,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    return _isLoggedIn ? const VoiceChatPage() : const LoginPage();
+    return _isLoggedIn ? const MainNavigationPage() : const LoginPage();
   }
 }
