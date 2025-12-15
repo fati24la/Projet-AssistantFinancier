@@ -7,16 +7,18 @@
       <h2>Assistant Financier</h2>
       <p class="subtitle">Administration</p>
     </div>
-    <mat-nav-list>
-      <a
-        mat-list-item
-        *ngFor="let item of menuItems"
-        [routerLink]="item.route"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{exact: false}">
-        <mat-icon>{{ item.icon }}</mat-icon>
-        <span>{{ item.label }}</span>
-      </a>
+    <mat-nav-list class="nav-list">
+      <div class="nav-items">
+        <a
+          mat-list-item
+          *ngFor="let item of menuItems"
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{exact: false}">
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
+        </a>
+      </div>
       <mat-divider style="margin: 8px 0;"></mat-divider>
       <button mat-list-item (click)="logout()" class="logout-menu-item">
         <mat-icon>logout</mat-icon>
