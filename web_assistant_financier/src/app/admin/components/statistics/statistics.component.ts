@@ -158,14 +158,42 @@ export class StatisticsComponent implements OnInit {
   }
 
   exportData(format: 'csv' | 'pdf'): void {
+    console.log(`📥 Tentative d'export ${format.toUpperCase()}...`);
     this.statisticsService.exportData(format).subscribe({
       next: (blob) => {
+        console.log('✅ Fichier reçu, taille:', blob.size, 'bytes');
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `statistics.${format}`;
+        
+        // Générer un nom de fichier avec timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        a.download = `statistics_${timestamp}.${format}`;
+        
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+        
+        console.log(`✅ Export ${format.toUpperCase()} réussi`);
+      },
+      error: (error) => {
+        console.error(`❌ Erreur lors de l'export ${format}:`, error);
+        let errorMsg = `Erreur lors de l'export ${format.toUpperCase()}`;
+        
+        if (error.status === 400) {
+          errorMsg = error.error || 'Format non supporté';
+        } else if (error.status === 500) {
+          errorMsg = error.error || 'Erreur serveur lors de l\'export';
+        } else if (error.error) {
+          if (typeof error.error === 'string') {
+            errorMsg = error.error;
+          } else if (error.error.message) {
+            errorMsg = error.error.message;
+          }
+        }
+        
+        alert(errorMsg);
       }
     });
   }
