@@ -24,6 +24,14 @@ class _DashboardPageState extends State<DashboardPage> {
     _loadDashboard();
   }
 
+  /// Permet de forcer un rechargement externe (par ex. depuis la navigation principale)
+  Future<void> reload() async {
+    setState(() {
+      _isLoading = true;
+    });
+    await _loadDashboard();
+  }
+
   Future<void> _loadDashboard() async {
     try {
       final data = await DashboardService.getDashboard();

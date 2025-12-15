@@ -27,6 +27,9 @@ public class DashboardService {
     private SavingsGoalRepository savingsGoalRepository;
 
     @Autowired
+    private BudgetRepository budgetRepository;
+
+    @Autowired
     private UserProfileRepository userProfileRepository;
 
     @Autowired
@@ -44,21 +47,30 @@ public class DashboardService {
         LocalDate now = LocalDate.now();
 
         List<Expense> expenses = expenseRepository.findByUserAndDateBetween(user, sixMonthsAgo, now);
-        
-        // Revenus simulés (basés sur le profil utilisateur)
-        BigDecimal totalIncome = profile.getMonthlyIncome() != null 
-                ? profile.getMonthlyIncome().multiply(BigDecimal.valueOf(6))
-                : BigDecimal.ZERO;
 
-        // Dépenses totales
+        // Épargne totale = somme des montants courants de TOUS les objectifs d'épargne
+        List<SavingsGoal> allGoals = savingsGoalRepository.findByUser(user);
+        BigDecimal totalSavings = allGoals.stream()
+                .map(goal -> goal.getCurrentAmount() != null ? goal.getCurrentAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Dépenses totales (inchangé)
         BigDecimal totalExpenses = expenses.stream()
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Épargne totale
-        BigDecimal totalSavings = profile.getTotalSavings() != null 
-                ? profile.getTotalSavings()
-                : BigDecimal.ZERO;
+        // Somme des montants restants sur les budgets actifs
+        List<Budget> budgets = budgetRepository.findByUser(user);
+        BigDecimal totalBudgetRemaining = budgets.stream()
+                .map(b -> {
+                    BigDecimal amount = b.getAmount() != null ? b.getAmount() : BigDecimal.ZERO;
+                    BigDecimal spent = b.getSpent() != null ? b.getSpent() : BigDecimal.ZERO;
+                    return amount.subtract(spent).max(BigDecimal.ZERO);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Revenus = somme des budgets restants + épargne totale (logique métier simplifiée)
+        BigDecimal totalIncome = totalBudgetRemaining.add(totalSavings);
 
         // Dette totale
         BigDecimal totalDebt = profile.getTotalDebt() != null 

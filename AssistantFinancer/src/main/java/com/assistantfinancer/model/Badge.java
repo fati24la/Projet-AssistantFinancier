@@ -3,9 +3,10 @@ package com.assistantfinancer.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
@@ -13,9 +14,11 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Badge {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     private String name;
@@ -25,6 +28,7 @@ public class Badge {
     private String requirement; // JSON string describing requirements
 
     @ManyToMany(mappedBy = "badges")
+    @ToString.Exclude
     private Set<UserProfile> userProfiles;
 }
 

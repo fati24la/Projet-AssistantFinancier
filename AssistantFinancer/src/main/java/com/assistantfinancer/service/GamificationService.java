@@ -9,6 +9,7 @@ import com.assistantfinancer.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Service
@@ -60,9 +61,15 @@ public class GamificationService {
                 .orElseGet(() -> createDefaultProfile(user));
 
         Set<Badge> badges = profile.getBadges();
+        if (badges == null) {
+            badges = new HashSet<>();
+        }
+
+        // Utiliser une copie pour éviter ConcurrentModificationException
         if (!badges.contains(badge)) {
-            badges.add(badge);
-            profile.setBadges(badges);
+            Set<Badge> updatedBadges = new HashSet<>(badges);
+            updatedBadges.add(badge);
+            profile.setBadges(updatedBadges);
             userProfileRepository.save(profile);
         }
     }

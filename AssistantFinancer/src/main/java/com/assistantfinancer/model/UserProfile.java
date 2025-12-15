@@ -3,7 +3,9 @@ package com.assistantfinancer.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,9 +16,11 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class UserProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @OneToOne
@@ -41,6 +45,7 @@ public class UserProfile {
         joinColumns = @JoinColumn(name = "user_profile_id"),
         inverseJoinColumns = @JoinColumn(name = "badge_id")
     )
+    @ToString.Exclude
     private Set<Badge> badges;
 }
 

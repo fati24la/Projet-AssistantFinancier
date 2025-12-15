@@ -15,9 +15,10 @@ class MainNavigationPage extends StatefulWidget {
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _currentIndex = 0;
+  final GlobalKey _dashboardKey = GlobalKey();
 
-  final List<Widget> _pages = [
-    const DashboardPage(),
+  late final List<Widget> _pages = [
+    DashboardPage(key: _dashboardKey),
     const BudgetPage(),
     const EducationPage(),
     const NotificationsPage(),
@@ -41,6 +42,13 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           setState(() {
             _currentIndex = index;
           });
+          if (index == 0) {
+            final state = _dashboardKey.currentState;
+            if (state != null) {
+              // Appel dynamique de la méthode reload() exposée par DashboardPage
+              (state as dynamic).reload();
+            }
+          }
         },
         items: const [
           BottomNavigationBarItem(
