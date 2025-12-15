@@ -59,7 +59,7 @@ class _EducationPageState extends State<EducationPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Éducation Financière'),
+        title: const Text('Guides financiers'),
         backgroundColor: const Color(0xFF4DD0E1),
       ),
       body: Column(
@@ -126,7 +126,7 @@ class _EducationPageState extends State<EducationPage> {
           Icon(Icons.school, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'Aucun cours disponible',
+            'Aucun guide disponible',
             style: TextStyle(fontSize: 18, color: Colors.grey[600]),
           ),
         ],

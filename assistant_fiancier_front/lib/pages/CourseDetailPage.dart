@@ -125,7 +125,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Détails du cours'),
+        title: const Text('Détails du guide'),
         backgroundColor: const Color(0xFF4DD0E1),
       ),
       body: _isLoading && _fullCourse == null
@@ -233,7 +233,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Contenu du cours',
+            'Contenu du guide',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,

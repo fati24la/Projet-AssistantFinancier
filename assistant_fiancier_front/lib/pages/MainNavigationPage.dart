@@ -61,7 +61,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.school),
-            label: 'Éducation',
+            label: 'Guides',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications),
