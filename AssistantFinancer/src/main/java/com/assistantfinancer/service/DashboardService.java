@@ -42,11 +42,11 @@ public class DashboardService {
         UserProfile profile = userProfileRepository.findByUser(user)
                 .orElseGet(() -> createDefaultProfile(user));
 
-        // Calculer les revenus et dépenses des 6 derniers mois
-        LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
+        // Calculer les revenus et dépenses sur le dernier mois
+        LocalDate oneMonthAgo = LocalDate.now().minusMonths(1);
         LocalDate now = LocalDate.now();
 
-        List<Expense> expenses = expenseRepository.findByUserAndDateBetween(user, sixMonthsAgo, now);
+        List<Expense> expenses = expenseRepository.findByUserAndDateBetween(user, oneMonthAgo, now);
 
         // Épargne totale = somme des montants courants de TOUS les objectifs d'épargne
         List<SavingsGoal> allGoals = savingsGoalRepository.findByUser(user);
@@ -81,8 +81,8 @@ public class DashboardService {
         BigDecimal financialHealthScore = calculateFinancialHealthScore(
                 totalIncome, totalExpenses, totalSavings, totalDebt);
 
-        // Données mensuelles
-        List<DashboardDto.MonthlyData> monthlyData = calculateMonthlyData(user, sixMonthsAgo, now, profile.getMonthlyIncome());
+        // Données d'évolution sur 1 mois (granularité journalière)
+        List<DashboardDto.MonthlyData> monthlyData = calculateDailyData(user, oneMonthAgo, now, profile.getMonthlyIncome());
 
         // Dépenses par catégorie
         List<DashboardDto.CategoryExpense> categoryExpenses = calculateCategoryExpenses(expenses, totalExpenses);
@@ -160,29 +160,39 @@ public class DashboardService {
         return savingsScore.add(expenseScore).add(debtScore);
     }
 
-    private List<DashboardDto.MonthlyData> calculateMonthlyData(User user, LocalDate start, LocalDate end, BigDecimal monthlyIncome) {
-        List<DashboardDto.MonthlyData> monthlyData = new ArrayList<>();
+    /**
+     * Calcule les données d'évolution sur 1 mois avec une granularité journalière.
+     * On continue à utiliser DashboardDto.MonthlyData pour rester compatible avec le front.
+     */
+    private List<DashboardDto.MonthlyData> calculateDailyData(User user, LocalDate start, LocalDate end, BigDecimal monthlyIncome) {
+        List<DashboardDto.MonthlyData> dailyData = new ArrayList<>();
         LocalDate current = start;
 
-        while (!current.isAfter(end)) {
-            LocalDate monthStart = current.withDayOfMonth(1);
-            LocalDate monthEnd = current.withDayOfMonth(current.lengthOfMonth());
+        BigDecimal safeMonthlyIncome = monthlyIncome != null ? monthlyIncome : BigDecimal.ZERO;
 
-            List<Expense> monthExpenses = expenseRepository.findByUserAndDateBetween(user, monthStart, monthEnd);
-            BigDecimal monthExpensesTotal = monthExpenses.stream()
+        while (!current.isAfter(end)) {
+            // Revenus journaliers approximés à partir du revenu mensuel
+            int daysInMonth = current.lengthOfMonth();
+            BigDecimal dailyIncome = daysInMonth > 0
+                    ? safeMonthlyIncome.divide(BigDecimal.valueOf(daysInMonth), 2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+
+            // Dépenses du jour courant
+            List<Expense> dayExpenses = expenseRepository.findByUserAndDateBetween(user, current, current);
+            BigDecimal dayExpensesTotal = dayExpenses.stream()
                     .map(Expense::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            monthlyData.add(new DashboardDto.MonthlyData(
-                    current.format(DateTimeFormatter.ofPattern("MMM yyyy")),
-                    monthlyIncome != null ? monthlyIncome : BigDecimal.ZERO,
-                    monthExpensesTotal
+            dailyData.add(new DashboardDto.MonthlyData(
+                    current.format(DateTimeFormatter.ofPattern("dd/MM")),
+                    dailyIncome,
+                    dayExpensesTotal
             ));
 
-            current = current.plusMonths(1);
+            current = current.plusDays(1);
         }
 
-        return monthlyData;
+        return dailyData;
     }
 
     private List<DashboardDto.CategoryExpense> calculateCategoryExpenses(List<Expense> expenses, BigDecimal totalExpenses) {

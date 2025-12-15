@@ -363,7 +363,7 @@ class _DashboardPageState extends State<DashboardPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Évolution sur 6 mois',
+            'Dépenses quotidiennes sur 1 mois',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -372,7 +372,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 100,
+            height: 160,
             child: _dashboardData!.monthlyData.isEmpty
                 ? Container(
                     height: 2,
@@ -383,16 +383,78 @@ class _DashboardPageState extends State<DashboardPage> {
                 : LineChart(
                     LineChartData(
                       gridData: FlGridData(show: false),
-                      titlesData: FlTitlesData(show: false),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 28,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index < 0 || index >= _dashboardData!.monthlyData.length) {
+                                return const SizedBox.shrink();
+                              }
+                              // On évite de surcharger en n'affichant qu'une étiquette sur 5
+                              if (index % 5 != 0 && index != _dashboardData!.monthlyData.length - 1) {
+                                return const SizedBox.shrink();
+                              }
+                              final label = _dashboardData!.monthlyData[index].month;
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                space: 4,
+                                child: Text(
+                                  label,
+                                  style: const TextStyle(
+                                    fontSize: 8,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        leftTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                      ),
                       borderData: FlBorderData(show: false),
+                      lineTouchData: LineTouchData(
+                        enabled: true,
+                        touchTooltipData: LineTouchTooltipData(
+                          tooltipBgColor: Colors.black87,
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              final index = spot.x.toInt();
+                              if (index < 0 || index >= _dashboardData!.monthlyData.length) {
+                                return null;
+                              }
+                              final data = _dashboardData!.monthlyData[index];
+                              return LineTooltipItem(
+                                '${data.month}\n${data.expenses.toStringAsFixed(0)} MAD',
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                ),
+                              );
+                            }).whereType<LineTooltipItem>().toList();
+                          },
+                        ),
+                      ),
                       minY: 0,
                       lineBarsData: [
                         LineChartBarData(
+                          // On trace maintenant les DÉPENSES quotidiennes
                           spots: _dashboardData!.monthlyData.asMap().entries.map((e) {
-                            return FlSpot(e.key.toDouble(), e.value.income);
+                            return FlSpot(e.key.toDouble(), e.value.expenses);
                           }).toList(),
                           isCurved: false,
-                          color: Colors.green,
+                          color: Colors.redAccent,
                           barWidth: 2,
                           dotData: FlDotData(show: false),
                           belowBarData: BarAreaData(show: false),
