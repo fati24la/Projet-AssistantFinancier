@@ -11,6 +11,7 @@
   padding: 12px 10px 20px;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .sidenav-header {
@@ -37,7 +38,7 @@
 }
 
 .nav-list {
-  padding: 16px 6px 10px;
+  padding: 16px 6px 0;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -96,6 +97,7 @@ mat-nav-list a mat-icon,
   border: 1px solid #fca5a5;
   background: #fff;
   margin-top: auto;
+  width: 100%;
 }
 
 .logout-menu-item:hover {
