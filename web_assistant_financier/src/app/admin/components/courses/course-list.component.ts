@@ -107,26 +107,70 @@ export class CourseListComponent implements OnInit {
   }
 
   toggleStatus(course: Course): void {
+    console.log('🔄 Tentative de changement de statut pour le cours:', course.id, course.title);
     this.courseService.toggleCourseStatus(course.id).subscribe({
       next: () => {
+        console.log('✅ Statut du cours modifié avec succès');
         this.snackBar.open('Statut du cours modifié', 'Fermer', { duration: 3000 });
         this.loadCourses();
       },
-      error: () => {
-        this.snackBar.open('Erreur lors de la modification', 'Fermer', { duration: 3000 });
+      error: (error) => {
+        console.error('❌ Erreur lors de la modification:', error);
+        console.error('❌ Status:', error.status);
+        console.error('❌ Error object:', error.error);
+        
+        let errorMsg = 'Erreur lors de la modification';
+        
+        if (error.status === 404) {
+          errorMsg = error.error?.message || error.error || 'Cours non trouvé';
+        } else if (error.status === 500) {
+          errorMsg = error.error?.message || error.error || 'Erreur serveur lors de la modification';
+        } else if (error.error) {
+          if (typeof error.error === 'string') {
+            errorMsg = error.error;
+          } else if (error.error.message) {
+            errorMsg = error.error.message;
+          }
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+        
+        this.snackBar.open(errorMsg, 'Fermer', { duration: 5000 });
       }
     });
   }
 
   deleteCourse(course: Course): void {
-    if (confirm(`Êtes-vous sûr de vouloir supprimer le cours "${course.title}" ?`)) {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer le cours "${course.title}" ?\n\nCette action est irréversible.`)) {
+      console.log('🗑️ Tentative de suppression du cours:', course.id, course.title);
       this.courseService.deleteCourse(course.id).subscribe({
         next: () => {
-          this.snackBar.open('Cours supprimé', 'Fermer', { duration: 3000 });
+          console.log('✅ Cours supprimé avec succès');
+          this.snackBar.open('Cours supprimé avec succès', 'Fermer', { duration: 3000 });
           this.loadCourses();
         },
-        error: () => {
-          this.snackBar.open('Erreur lors de la suppression', 'Fermer', { duration: 3000 });
+        error: (error) => {
+          console.error('❌ Erreur lors de la suppression:', error);
+          console.error('❌ Status:', error.status);
+          console.error('❌ Error object:', error.error);
+          
+          let errorMsg = 'Erreur lors de la suppression';
+          
+          if (error.status === 404) {
+            errorMsg = error.error?.message || error.error || 'Cours non trouvé';
+          } else if (error.status === 500) {
+            errorMsg = error.error?.message || error.error || 'Erreur serveur lors de la suppression';
+          } else if (error.error) {
+            if (typeof error.error === 'string') {
+              errorMsg = error.error;
+            } else if (error.error.message) {
+              errorMsg = error.error.message;
+            }
+          } else if (error.message) {
+            errorMsg = error.message;
+          }
+          
+          this.snackBar.open(errorMsg, 'Fermer', { duration: 5000 });
         }
       });
     }

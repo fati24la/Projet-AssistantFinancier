@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -19,7 +20,8 @@ import { AuthService } from '../../../core/services/auth.service';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSnackBarModule
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
@@ -32,7 +34,8 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private snackBar: MatSnackBar
   ) {
     this.loginForm = this.fb.group({
       username: ['', [Validators.required]],
@@ -54,19 +57,19 @@ export class LoginComponent {
           console.error('Erreur de connexion:', error);
           
           // Gérer différents formats de réponse d'erreur
+          let errorMsg = 'Erreur de connexion. Vérifiez vos identifiants.';
           if (error.error) {
             if (typeof error.error === 'string') {
-              this.errorMessage = error.error;
+              errorMsg = error.error;
             } else if (error.error.message) {
-              this.errorMessage = error.error.message;
-            } else {
-              this.errorMessage = 'Erreur de connexion. Vérifiez vos identifiants.';
+              errorMsg = error.error.message;
             }
           } else if (error.message) {
-            this.errorMessage = error.message;
-          } else {
-            this.errorMessage = 'Erreur de connexion. Vérifiez que le serveur est démarré et que vos identifiants sont corrects.';
+            errorMsg = error.message;
           }
+          
+          this.errorMessage = errorMsg;
+          this.snackBar.open(errorMsg, 'Fermer', { duration: 5000 });
         }
       });
     }

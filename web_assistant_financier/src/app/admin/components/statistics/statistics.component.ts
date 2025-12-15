@@ -32,7 +32,7 @@ export class StatisticsComponent implements OnInit {
     datasets: [{
       label: 'Complétions',
       data: [],
-      backgroundColor: '#6366f1',
+      backgroundColor: '#2563eb',
       borderRadius: 8,
       borderSkipped: false,
       barThickness: 40
@@ -58,15 +58,14 @@ export class StatisticsComponent implements OnInit {
           usePointStyle: true,
           padding: 15,
           font: {
-            size: 12,
-            weight: 'normal'
+            size: 12
           }
         }
       },
       tooltip: {
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
         padding: 12,
-        titleFont: { size: 14, weight: 'bold' },
+        titleFont: { size: 14 },
         bodyFont: { size: 13 },
         cornerRadius: 8,
         displayColors: true
@@ -119,13 +118,40 @@ export class StatisticsComponent implements OnInit {
     this.isLoading = true;
     this.statisticsService.getCourseStatistics().subscribe({
       next: (stats) => {
-        this.courseStatistics = stats;
-        this.courseStatsData.labels = stats.map(s => s.courseTitle);
-        this.courseStatsData.datasets[0].data = stats.map(s => s.completions);
-        this.courseStatsData.datasets[1].data = stats.map(s => s.averageScore);
+        console.log('📊 Course statistics received:', stats);
+        // Convertir les données du backend au format attendu
+        this.courseStatistics = stats.map((s: any) => ({
+          courseId: s.courseId || s.id,
+          courseTitle: s.courseTitle || s.title || 'Cours inconnu',
+          completions: s.completions || s.completionCount || 0,
+          averageScore: s.averageScore || 0
+        }));
+        
+        if (this.courseStatistics.length > 0) {
+          this.courseStatsData = {
+            labels: this.courseStatistics.map(s => s.courseTitle),
+            datasets: [{
+              label: 'Complétions',
+              data: this.courseStatistics.map(s => s.completions),
+              backgroundColor: '#2563eb',
+              borderRadius: 8,
+              borderSkipped: false,
+              barThickness: 40
+            }, {
+              label: 'Score moyen (%)',
+              data: this.courseStatistics.map(s => s.averageScore),
+              backgroundColor: '#7c3aed',
+              borderRadius: 8,
+              borderSkipped: false,
+              barThickness: 40,
+              yAxisID: 'y1'
+            }]
+          };
+        }
         this.isLoading = false;
       },
-      error: () => {
+      error: (error) => {
+        console.error('❌ Error loading course statistics:', error);
         this.isLoading = false;
       }
     });

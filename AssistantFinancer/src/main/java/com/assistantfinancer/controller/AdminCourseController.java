@@ -7,10 +7,12 @@ import com.assistantfinancer.model.Quiz;
 import com.assistantfinancer.repository.CourseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -19,6 +21,9 @@ public class AdminCourseController {
 
     @Autowired
     private CourseRepository courseRepository;
+
+    @Autowired
+    private com.assistantfinancer.repository.UserProgressRepository userProgressRepository;
 
     @GetMapping
     public ResponseEntity<List<CourseDto>> getCourses(
@@ -173,32 +178,90 @@ public class AdminCourseController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Course not found"));
-        courseRepository.delete(course);
-        return ResponseEntity.ok().build();
+    @Transactional
+    public ResponseEntity<?> deleteCourse(@PathVariable Long id) {
+        try {
+            System.out.println("🗑️ [AdminCourseController] Tentative de suppression du cours ID: " + id);
+            
+            Course course = courseRepository.findById(id).orElse(null);
+            if (course == null) {
+                System.out.println("❌ [AdminCourseController] Cours non trouvé: " + id);
+                return ResponseEntity.status(404).body(java.util.Map.of("message", "Course not found with id: " + id));
+            }
+            
+            System.out.println("✅ [AdminCourseController] Cours trouvé: " + course.getTitle());
+            
+            // Supprimer d'abord les données liées pour éviter les erreurs de contrainte
+            // Supprimer les progressions utilisateur liées à ce cours en utilisant une requête JPQL
+            // pour éviter les problèmes de session Hibernate (suppression directe sans charger les entités)
+            try {
+                int deletedCount = userProgressRepository.deleteByCourseId(id);
+                System.out.println("📚 Suppression de " + deletedCount + " progressions utilisateur");
+            } catch (Exception e) {
+                System.out.println("⚠️ Erreur lors de la suppression des progressions: " + e.getMessage());
+                e.printStackTrace();
+            }
+            
+            // Les quiz sont supprimés automatiquement grâce à CascadeType.ALL
+            // Pas besoin de les supprimer manuellement
+            
+            // Maintenant supprimer le cours (les quiz seront supprimés en cascade)
+            System.out.println("🗑️ Suppression finale du cours: " + course.getTitle());
+            courseRepository.delete(course);
+            // La transaction @Transactional gérera le commit automatiquement à la fin de la méthode
+            
+            System.out.println("✅ [AdminCourseController] Cours supprimé avec succès");
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            System.err.println("❌ [AdminCourseController] RuntimeException: " + (e.getMessage() != null ? e.getMessage() : "Unknown error"));
+            e.printStackTrace();
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "Unknown error";
+            return ResponseEntity.status(404).body(java.util.Map.of("message", "Course not found", "error", errorMsg));
+        } catch (Exception e) {
+            System.err.println("❌ [AdminCourseController] Exception: " + (e.getMessage() != null ? e.getMessage() : "Unknown error"));
+            e.printStackTrace();
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "Unknown error";
+            return ResponseEntity.status(500).body(java.util.Map.of("message", "Error deleting course", "error", errorMsg));
+        }
     }
 
     @PutMapping("/{id}/toggle-status")
-    public ResponseEntity<CourseDto> toggleCourseStatus(@PathVariable Long id) {
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Course not found"));
+    @Transactional
+    public ResponseEntity<?> toggleCourseStatus(@PathVariable Long id) {
+        try {
+            System.out.println("🔄 [AdminCourseController] Toggle status pour le cours ID: " + id);
+            
+            Course course = courseRepository.findById(id).orElse(null);
+            if (course == null) {
+                System.out.println("❌ [AdminCourseController] Cours non trouvé: " + id);
+                return ResponseEntity.status(404).body(java.util.Map.of("message", "Course not found with id: " + id));
+            }
+            
+            // Toggle le statut isActive
+            boolean currentStatus = course.isActive();
+            boolean newStatus = !currentStatus;
+            course.setActive(newStatus);
+            Course saved = courseRepository.save(course);
+            
+            System.out.println("✅ [AdminCourseController] Statut du cours " + saved.getTitle() + " changé de " + currentStatus + " à " + newStatus);
+            
+            CourseDto dto = new CourseDto();
+            dto.setId(saved.getId());
+            dto.setTitle(saved.getTitle());
+            dto.setDescription(saved.getDescription());
+            dto.setContent(saved.getContent());
+            dto.setCategory(saved.getCategory());
+            dto.setDifficulty(saved.getDifficulty());
+            dto.setDurationMinutes(saved.getDurationMinutes());
+            dto.setLanguage(saved.getLanguage());
 
-        course.setActive(!course.isActive());
-        Course saved = courseRepository.save(course);
-
-        CourseDto dto = new CourseDto();
-        dto.setId(saved.getId());
-        dto.setTitle(saved.getTitle());
-        dto.setDescription(saved.getDescription());
-        dto.setContent(saved.getContent());
-        dto.setCategory(saved.getCategory());
-        dto.setDifficulty(saved.getDifficulty());
-        dto.setDurationMinutes(saved.getDurationMinutes());
-        dto.setLanguage(saved.getLanguage());
-
-        return ResponseEntity.ok(dto);
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            System.err.println("❌ [AdminCourseController] Erreur lors du toggle status: " + (e.getMessage() != null ? e.getMessage() : "Unknown error"));
+            e.printStackTrace();
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "Unknown error";
+            return ResponseEntity.status(500).body(java.util.Map.of("message", "Error toggling course status", "error", errorMsg));
+        }
     }
 }
 

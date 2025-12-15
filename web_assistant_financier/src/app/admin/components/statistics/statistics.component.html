@@ -48,7 +48,12 @@
             <tr *ngFor="let stat of courseStatistics">
               <td>{{ stat.courseTitle }}</td>
               <td>{{ stat.completions }}</td>
-              <td>{{ stat.averageScore.toFixed(1) }}%</td>
+              <td>{{ (stat.averageScore || 0).toFixed(1) }}%</td>
+            </tr>
+            <tr *ngIf="courseStatistics.length === 0">
+              <td colspan="3" style="text-align: center; color: var(--text-secondary);">
+                Aucune statistique disponible
+              </td>
             </tr>
           </tbody>
         </table>

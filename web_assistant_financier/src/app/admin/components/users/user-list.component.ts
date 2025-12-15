@@ -74,9 +74,11 @@ export class UserListComponent implements OnInit {
         this.totalElements = response.totalElements;
         this.isLoading = false;
       },
-      error: () => {
+      error: (error) => {
+        console.error('Erreur lors du chargement des utilisateurs:', error);
         this.isLoading = false;
-        this.snackBar.open('Erreur lors du chargement des utilisateurs', 'Fermer', { duration: 3000 });
+        const errorMsg = error.error?.message || error.message || 'Erreur lors du chargement des utilisateurs';
+        this.snackBar.open(errorMsg, 'Fermer', { duration: 3000 });
       }
     });
   }
@@ -95,26 +97,57 @@ export class UserListComponent implements OnInit {
   }
 
   toggleStatus(user: User): void {
-    this.userService.toggleUserStatus(user.id).subscribe({
-      next: () => {
-        this.snackBar.open('Statut utilisateur modifié', 'Fermer', { duration: 3000 });
-        this.loadUsers();
-      },
-      error: () => {
-        this.snackBar.open('Erreur lors de la modification', 'Fermer', { duration: 3000 });
-      }
-    });
+    const action = user.enabled ? 'désactiver' : 'activer';
+    if (confirm(`Êtes-vous sûr de vouloir ${action} l'utilisateur ${user.username} ?`)) {
+      this.userService.toggleUserStatus(user.id).subscribe({
+        next: () => {
+          this.snackBar.open(`Utilisateur ${user.enabled ? 'désactivé' : 'activé'} avec succès`, 'Fermer', { duration: 3000 });
+          this.loadUsers();
+        },
+        error: (error) => {
+          console.error('Erreur lors du changement de statut:', error);
+          const errorMsg = error.error?.message || error.message || 'Erreur lors de la modification';
+          this.snackBar.open(errorMsg, 'Fermer', { duration: 5000 });
+        }
+      });
+    }
   }
 
   deleteUser(user: User): void {
-    if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${user.username} ?`)) {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.username}" ?\n\nCette action est irréversible.`)) {
+      console.log('🗑️ Tentative de suppression de l\'utilisateur:', user.id, user.username);
       this.userService.deleteUser(user.id).subscribe({
         next: () => {
-          this.snackBar.open('Utilisateur supprimé', 'Fermer', { duration: 3000 });
+          console.log('✅ Utilisateur supprimé avec succès');
+          this.snackBar.open('Utilisateur supprimé avec succès', 'Fermer', { duration: 3000 });
+          // Ajuster la page si nécessaire après suppression
+          if (this.users.length === 1 && this.pageIndex > 0) {
+            this.pageIndex--;
+          }
           this.loadUsers();
         },
-        error: () => {
-          this.snackBar.open('Erreur lors de la suppression', 'Fermer', { duration: 3000 });
+        error: (error) => {
+          console.error('❌ Erreur lors de la suppression:', error);
+          console.error('❌ Status:', error.status);
+          console.error('❌ Error object:', error.error);
+          
+          let errorMsg = 'Erreur lors de la suppression';
+          
+          if (error.status === 404) {
+            errorMsg = error.error?.message || error.error || 'Utilisateur non trouvé';
+          } else if (error.status === 500) {
+            errorMsg = error.error?.message || error.error || 'Erreur serveur lors de la suppression';
+          } else if (error.error) {
+            if (typeof error.error === 'string') {
+              errorMsg = error.error;
+            } else if (error.error.message) {
+              errorMsg = error.error.message;
+            }
+          } else if (error.message) {
+            errorMsg = error.message;
+          }
+          
+          this.snackBar.open(errorMsg, 'Fermer', { duration: 5000 });
         }
       });
     }

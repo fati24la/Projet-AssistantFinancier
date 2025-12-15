@@ -24,6 +24,8 @@ public class User {
 
     private String password;
 
+    private Boolean enabled = true; // Par défaut, les utilisateurs sont activés
+
     private LocalDateTime createdAt;
 
     @PrePersist
