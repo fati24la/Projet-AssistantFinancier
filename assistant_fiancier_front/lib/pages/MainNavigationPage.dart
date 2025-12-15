@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'DashboardPage.dart';
 import 'BudgetPage.dart';
 import 'EducationPage.dart';
+import 'NotificationsPage.dart';
 import 'ProfilePage.dart';
 import '../VoiceChatPage.dart';
 
@@ -19,6 +20,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     const DashboardPage(),
     const BudgetPage(),
     const EducationPage(),
+    const NotificationsPage(),
     const VoiceChatPage(),
     const ProfilePage(),
   ];
@@ -52,6 +54,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.school),
             label: 'Éducation',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications),
+            label: 'Notifications',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat),

@@ -15,9 +15,9 @@ public class CorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         
-        // Autoriser les requêtes depuis le frontend Angular
-        config.addAllowedOrigin("http://localhost:4200");
-        config.addAllowedOrigin("http://127.0.0.1:4200");
+        // Autoriser les requêtes depuis les frontends (Angular, Flutter web, etc.)
+        // En dev on accepte toutes les origines pour éviter les 403 CORS
+        config.addAllowedOriginPattern("*");
         
         // Autoriser tous les headers
         config.addAllowedHeader("*");
@@ -27,6 +27,9 @@ public class CorsConfig {
         
         // Autoriser l'envoi de credentials (cookies, auth headers)
         config.setAllowCredentials(true);
+
+        // Exposer l'en-tête Authorization pour que le client puisse le lire
+        config.addExposedHeader("Authorization");
         
         source.registerCorsConfiguration("/**", config);
         return source;

@@ -4,6 +4,7 @@ import '../models/dashboard_data.dart';
 import '../services/dashboard_service.dart';
 import 'BudgetPage.dart';
 import 'EducationPage.dart';
+import 'NotificationsPage.dart';
 import '../VoiceChatPage.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -121,6 +122,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
               ),
+          Row(
+            children: [
+              _buildNotificationButton(),
+              const SizedBox(width: 8),
               Container(
                 width: 48,
                 height: 48,
@@ -134,6 +139,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   size: 24,
                 ),
               ),
+            ],
+          ),
             ],
           ),
         ),
@@ -615,5 +622,42 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _buildNotificationButton() {
+    final unread = _dashboardData?.unreadNotifications ?? 0;
+    return Stack(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications, color: Colors.white),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const NotificationsPage(),
+              ),
+            );
+          },
+        ),
+        if (unread > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.redAccent,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                unread > 9 ? '9+' : unread.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
