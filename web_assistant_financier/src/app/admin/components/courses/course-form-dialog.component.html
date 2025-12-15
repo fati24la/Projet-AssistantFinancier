@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>{{ isEditMode ? 'Modifier le cours' : 'Nouveau cours' }}</h2>
+<h2 mat-dialog-title>{{ isEditMode ? 'Modifier le guide' : 'Nouveau guide' }}</h2>
 <mat-dialog-content>
   <form [formGroup]="courseForm" class="course-form">
     <mat-form-field appearance="outline" class="full-width">
@@ -68,7 +68,7 @@
       </mat-form-field>
     </div>
 
-    <mat-checkbox formControlName="isActive">Cours actif</mat-checkbox>
+    <mat-checkbox formControlName="isActive">Guide actif</mat-checkbox>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions>

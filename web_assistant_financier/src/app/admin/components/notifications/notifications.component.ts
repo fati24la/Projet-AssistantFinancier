@@ -42,7 +42,7 @@ export class NotificationsComponent implements OnInit {
 
   templates = [
     { title: 'Bienvenue', message: 'Bienvenue dans l\'Assistant Financier ! Commencez votre parcours d\'apprentissage dès aujourd\'hui.' },
-    { title: 'Nouveau cours', message: 'Un nouveau cours est maintenant disponible ! Découvrez-le dans la section Éducation.' },
+    { title: 'Nouveau guide', message: 'Un nouveau guide est maintenant disponible ! Découvrez-le dans la section Guides.' },
     { title: 'Rappel budget', message: 'N\'oubliez pas de suivre vos budgets et vos dépenses régulièrement.' }
   ];
 

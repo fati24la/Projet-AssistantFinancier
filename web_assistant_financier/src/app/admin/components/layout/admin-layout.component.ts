@@ -44,7 +44,7 @@ export class AdminLayoutComponent implements OnInit {
   menuItems: MenuItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
     { label: 'Utilisateurs', icon: 'people', route: '/admin/users' },
-    { label: 'Cours', icon: 'school', route: '/admin/courses' },
+    { label: 'Guides', icon: 'school', route: '/admin/courses' },
     { label: 'Statistiques', icon: 'analytics', route: '/admin/statistics' },
     { label: 'Notifications', icon: 'notifications', route: '/admin/notifications' }
   ];

@@ -96,8 +96,8 @@
         <mat-tab label="Progression">
           <div class="tab-content">
             <table mat-table [dataSource]="userDetails.progress || []" *ngIf="userDetails.progress && userDetails.progress.length > 0">
-              <ng-container matColumnDef="course">
-                <th mat-header-cell *matHeaderCellDef>Cours</th>
+            <ng-container matColumnDef="course">
+                <th mat-header-cell *matHeaderCellDef>Guide</th>
                 <td mat-cell *matCellDef="let progress">{{ progress.course?.title }}</td>
               </ng-container>
               <ng-container matColumnDef="completed">

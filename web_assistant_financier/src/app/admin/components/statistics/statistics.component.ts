@@ -122,7 +122,7 @@ export class StatisticsComponent implements OnInit {
         // Convertir les données du backend au format attendu
         this.courseStatistics = stats.map((s: any) => ({
           courseId: s.courseId || s.id,
-          courseTitle: s.courseTitle || s.title || 'Cours inconnu',
+          courseTitle: s.courseTitle || s.title || 'Guide inconnu',
           completions: s.completions || s.completionCount || 0,
           averageScore: s.averageScore || 0
         }));
