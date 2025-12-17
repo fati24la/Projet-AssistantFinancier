@@ -59,6 +59,7 @@ public class AdminCourseController {
             dto.setDifficulty(course.getDifficulty());
             dto.setDurationMinutes(course.getDurationMinutes());
             dto.setLanguage(course.getLanguage());
+            dto.setIsActive(course.isActive());
             dto.setCompleted(false);
             dto.setProgress(0);
 
@@ -97,6 +98,7 @@ public class AdminCourseController {
         dto.setDifficulty(course.getDifficulty());
         dto.setDurationMinutes(course.getDurationMinutes());
         dto.setLanguage(course.getLanguage());
+        dto.setIsActive(course.isActive());
         dto.setCompleted(false);
         dto.setProgress(0);
 
@@ -142,6 +144,7 @@ public class AdminCourseController {
         dto.setDifficulty(saved.getDifficulty());
         dto.setDurationMinutes(saved.getDurationMinutes());
         dto.setLanguage(saved.getLanguage());
+        dto.setIsActive(saved.isActive());
 
         return ResponseEntity.ok(dto);
     }
@@ -173,6 +176,7 @@ public class AdminCourseController {
         dto.setDifficulty(saved.getDifficulty());
         dto.setDurationMinutes(saved.getDurationMinutes());
         dto.setLanguage(saved.getLanguage());
+        dto.setIsActive(saved.isActive());
 
         return ResponseEntity.ok(dto);
     }
@@ -254,6 +258,7 @@ public class AdminCourseController {
             dto.setDifficulty(saved.getDifficulty());
             dto.setDurationMinutes(saved.getDurationMinutes());
             dto.setLanguage(saved.getLanguage());
+            dto.setIsActive(saved.isActive());
 
             return ResponseEntity.ok(dto);
         } catch (Exception e) {

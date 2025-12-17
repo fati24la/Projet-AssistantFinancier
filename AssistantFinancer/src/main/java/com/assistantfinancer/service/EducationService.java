@@ -115,6 +115,7 @@ public class EducationService {
         dto.setDifficulty(course.getDifficulty());
         dto.setDurationMinutes(course.getDurationMinutes());
         dto.setLanguage(course.getLanguage());
+        dto.setIsActive(course.isActive());
         dto.setCompleted(false);
         dto.setProgress(0);
         

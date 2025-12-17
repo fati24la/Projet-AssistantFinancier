@@ -20,6 +20,10 @@ public class CourseDto {
     private String language;
     private boolean isCompleted;
     private Integer progress;
+    // Statut d'activation du cours (utilisé notamment par l'admin web)
+    // Boolean (objet) pour garder un getter/setter explicites getIsActive/setIsActive
+    // et une sérialisation JSON avec la clé "isActive"
+    private Boolean isActive;
     private List<QuizDto> quizzes;
 
     @Data
