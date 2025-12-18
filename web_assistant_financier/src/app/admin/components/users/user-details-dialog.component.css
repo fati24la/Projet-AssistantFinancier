@@ -139,16 +139,30 @@ mat-dialog-actions {
   justify-content: flex-end;
 }
 
-mat-dialog-actions button {
-  border-radius: 999px;
-  font-weight: 600;
-  padding: 0 26px;
-  border: 1px solid var(--border-color);
-  background-color: #ffffff;
-}
-
 .status-chip {
   border-radius: 999px;
   padding: 0 14px;
   font-weight: 600;
+}
+
+.dialog-close-btn {
+  border-radius: 999px;
+  font-weight: 600;
+  padding: 0 28px;
+  border: none;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #ffffff;
+  box-shadow: 0 10px 25px rgba(79, 70, 229, 0.35);
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.dialog-close-btn:hover {
+  background: linear-gradient(135deg, #4338ca, #4f46e5);
+  box-shadow: 0 12px 30px rgba(79, 70, 229, 0.45);
+}
+
+.dialog-close-btn:active {
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+  transform: translateY(1px);
 }
