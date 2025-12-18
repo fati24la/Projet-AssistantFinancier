@@ -6,7 +6,7 @@
     </div>
 
     <div *ngIf="!isLoading && userDetails">
-      <mat-tab-group>
+      <mat-tab-group class="user-details-tabs">
         <mat-tab label="Informations">
           <div class="tab-content">
             <mat-card>
@@ -25,7 +25,7 @@
                 </div>
                 <div class="info-row">
                   <strong>Statut:</strong>
-                  <mat-chip [color]="userDetails.enabled ? 'primary' : 'warn'">
+                  <mat-chip [color]="userDetails.enabled ? 'primary' : 'warn'" class="status-chip" selected>
                     {{ userDetails.enabled ? 'Actif' : 'Inactif' }}
                   </mat-chip>
                 </div>

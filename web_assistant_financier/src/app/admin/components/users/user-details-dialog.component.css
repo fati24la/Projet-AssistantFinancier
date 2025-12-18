@@ -1,7 +1,11 @@
 .dialog-container {
-  min-width: 700px;
-  max-width: 900px;
+  min-width: 720px;
+  max-width: 980px;
   max-height: 90vh;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  padding: 20px 24px 16px;
 }
 
 h2 {
@@ -39,9 +43,10 @@ mat-dialog-content {
 
 .tab-content {
   padding: 24px;
-  background: #f8fafc;
+  background: #f9fafb;
   border-radius: 12px;
   margin-top: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
 .info-row {
@@ -97,14 +102,53 @@ table tr:last-child td {
   border-bottom: none;
 }
 
+/* Onglets plus modernes */
+::ng-deep .user-details-tabs .mat-mdc-tab-header {
+  border-bottom: none;
+  margin-bottom: 4px;
+}
+
+::ng-deep .user-details-tabs .mat-mdc-tab-labels {
+  justify-content: center;
+  gap: 32px;
+}
+
+::ng-deep .user-details-tabs .mat-mdc-tab .mdc-tab__text-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+::ng-deep .user-details-tabs .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
+  color: #4f46e5;
+}
+
+::ng-deep .user-details-tabs .mat-mdc-tab-indicator .mat-mdc-tab-indicator-active-indicator {
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+}
+
 mat-dialog-actions {
   padding: 16px 24px;
   border-top: 1px solid var(--border-color);
-  background: #f8fafc;
+  background: #f9fafb;
+  display: flex;
+  justify-content: flex-end;
 }
 
 mat-dialog-actions button {
-  border-radius: 8px;
+  border-radius: 999px;
   font-weight: 600;
-  padding: 0 24px;
+  padding: 0 26px;
+  border: 1px solid var(--border-color);
+  background-color: #ffffff;
+}
+
+.status-chip {
+  border-radius: 999px;
+  padding: 0 14px;
+  font-weight: 600;
 }

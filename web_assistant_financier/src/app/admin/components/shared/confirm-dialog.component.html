@@ -1,0 +1,27 @@
+<div class="confirm-dialog">
+  <div class="confirm-dialog-header">
+    <div class="confirm-icon-wrapper" [ngClass]="data.color || 'warn'">
+      <mat-icon class="confirm-icon">{{ data.icon || 'help_outline' }}</mat-icon>
+    </div>
+    <h2 class="confirm-title">{{ data.title || 'Confirmation' }}</h2>
+  </div>
+
+  <div class="confirm-dialog-content">
+    <p>{{ data.message }}</p>
+  </div>
+
+  <div class="confirm-dialog-actions">
+    <button mat-button (click)="onCancel()" class="btn-cancel">
+      {{ data.cancelText || 'Annuler' }}
+    </button>
+    <button
+      mat-raised-button
+      [color]="data.color || 'warn'"
+      class="btn-confirm"
+      (click)="onConfirm()">
+      {{ data.confirmText || 'Confirmer' }}
+    </button>
+  </div>
+</div>
+
+

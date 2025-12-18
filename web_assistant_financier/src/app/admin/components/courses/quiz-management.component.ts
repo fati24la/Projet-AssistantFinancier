@@ -1,7 +1,7 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +13,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CourseService } from '../../../core/services/course.service';
 import { Course, Quiz } from '../../../models/course.model';
+import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 
 @Component({
   selector: 'app-quiz-management',
@@ -47,6 +48,7 @@ export class QuizManagementComponent implements OnInit {
     private courseService: CourseService,
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<QuizManagementComponent>,
+    private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {
     this.course = data;
@@ -178,17 +180,31 @@ export class QuizManagementComponent implements OnInit {
   }
 
   deleteQuiz(quizId: number): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce quiz ?')) {
-      this.courseService.deleteQuiz(this.course.id, quizId).subscribe({
-        next: () => {
-          this.snackBar.open('Quiz supprimé', 'Fermer', { duration: 3000 });
-          this.loadQuizzes();
-        },
-        error: () => {
-          this.snackBar.open('Erreur lors de la suppression', 'Fermer', { duration: 3000 });
-        }
-      });
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      data: {
+        title: 'Supprimer le quiz',
+        message: 'Êtes-vous sûr de vouloir supprimer ce quiz ?',
+        confirmText: 'Supprimer',
+        cancelText: 'Annuler',
+        icon: 'quiz',
+        color: 'warn'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.courseService.deleteQuiz(this.course.id, quizId).subscribe({
+          next: () => {
+            this.snackBar.open('Quiz supprimé', 'Fermer', { duration: 3000 });
+            this.loadQuizzes();
+          },
+          error: () => {
+            this.snackBar.open('Erreur lors de la suppression', 'Fermer', { duration: 3000 });
+          }
+        });
+      }
+    });
   }
 
   close(): void {

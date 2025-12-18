@@ -15,6 +15,7 @@ import { CourseService } from '../../../core/services/course.service';
 import { Course } from '../../../models/course.model';
 import { CourseFormDialogComponent } from './course-form-dialog.component';
 import { QuizManagementComponent } from './quiz-management.component';
+import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 
 @Component({
   selector: 'app-course-list',
@@ -141,39 +142,53 @@ export class CourseListComponent implements OnInit {
   }
 
   deleteCourse(course: Course): void {
-    if (confirm(`Êtes-vous sûr de vouloir supprimer le cours "${course.title}" ?\n\nCette action est irréversible.`)) {
-      console.log('🗑️ Tentative de suppression du cours:', course.id, course.title);
-      this.courseService.deleteCourse(course.id).subscribe({
-        next: () => {
-          console.log('✅ Cours supprimé avec succès');
-          this.snackBar.open('Cours supprimé avec succès', 'Fermer', { duration: 3000 });
-          this.loadCourses();
-        },
-        error: (error) => {
-          console.error('❌ Erreur lors de la suppression:', error);
-          console.error('❌ Status:', error.status);
-          console.error('❌ Error object:', error.error);
-          
-          let errorMsg = 'Erreur lors de la suppression';
-          
-          if (error.status === 404) {
-            errorMsg = error.error?.message || error.error || 'Cours non trouvé';
-          } else if (error.status === 500) {
-            errorMsg = error.error?.message || error.error || 'Erreur serveur lors de la suppression';
-          } else if (error.error) {
-            if (typeof error.error === 'string') {
-              errorMsg = error.error;
-            } else if (error.error.message) {
-              errorMsg = error.error.message;
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      data: {
+        title: 'Supprimer le guide',
+        message: `Êtes-vous sûr de vouloir supprimer le cours "${course.title}" ?\nCette action est irréversible.`,
+        confirmText: 'Supprimer',
+        cancelText: 'Annuler',
+        icon: 'delete',
+        color: 'warn'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        console.log('🗑️ Tentative de suppression du cours:', course.id, course.title);
+        this.courseService.deleteCourse(course.id).subscribe({
+          next: () => {
+            console.log('✅ Cours supprimé avec succès');
+            this.snackBar.open('Cours supprimé avec succès', 'Fermer', { duration: 3000 });
+            this.loadCourses();
+          },
+          error: (error) => {
+            console.error('❌ Erreur lors de la suppression:', error);
+            console.error('❌ Status:', error.status);
+            console.error('❌ Error object:', error.error);
+            
+            let errorMsg = 'Erreur lors de la suppression';
+            
+            if (error.status === 404) {
+              errorMsg = error.error?.message || error.error || 'Cours non trouvé';
+            } else if (error.status === 500) {
+              errorMsg = error.error?.message || error.error || 'Erreur serveur lors de la suppression';
+            } else if (error.error) {
+              if (typeof error.error === 'string') {
+                errorMsg = error.error;
+              } else if (error.error.message) {
+                errorMsg = error.error.message;
+              }
+            } else if (error.message) {
+              errorMsg = error.message;
             }
-          } else if (error.message) {
-            errorMsg = error.message;
+            
+            this.snackBar.open(errorMsg, 'Fermer', { duration: 5000 });
           }
-          
-          this.snackBar.open(errorMsg, 'Fermer', { duration: 5000 });
-        }
-      });
-    }
+        });
+      }
+    });
   }
 
   viewQuizzes(course: Course): void {

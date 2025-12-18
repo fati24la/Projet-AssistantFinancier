@@ -5,6 +5,7 @@ import com.assistantfinancer.dto.CourseDto;
 import com.assistantfinancer.model.Course;
 import com.assistantfinancer.model.Quiz;
 import com.assistantfinancer.repository.CourseRepository;
+import com.assistantfinancer.repository.QuizRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,9 @@ public class AdminCourseController {
 
     @Autowired
     private com.assistantfinancer.repository.UserProgressRepository userProgressRepository;
+
+    @Autowired
+    private QuizRepository quizRepository;
 
     @GetMapping
     public ResponseEntity<List<CourseDto>> getCourses(
@@ -266,6 +270,103 @@ public class AdminCourseController {
             e.printStackTrace();
             String errorMsg = e.getMessage() != null ? e.getMessage() : "Unknown error";
             return ResponseEntity.status(500).body(java.util.Map.of("message", "Error toggling course status", "error", errorMsg));
+        }
+    }
+
+    // ---------------- QUIZZES MANAGEMENT (ADMIN) ----------------
+
+    @PostMapping("/{courseId}/quizzes")
+    @Transactional
+    public ResponseEntity<?> addQuizToCourse(
+            @PathVariable Long courseId,
+            @RequestBody CourseDto.QuizDto quizDto) {
+        try {
+            Course course = courseRepository.findById(courseId)
+                    .orElseThrow(() -> new RuntimeException("Course not found with id: " + courseId));
+
+            Quiz quiz = new Quiz();
+            quiz.setQuestion(quizDto.getQuestion());
+            quiz.setOptions(quizDto.getOptions());
+            quiz.setCorrectAnswerIndex(quizDto.getCorrectAnswerIndex());
+            quiz.setExplanation(quizDto.getExplanation());
+            quiz.setCourse(course);
+
+            Quiz saved = quizRepository.save(quiz);
+
+            CourseDto.QuizDto response = new CourseDto.QuizDto();
+            response.setId(saved.getId());
+            response.setQuestion(saved.getQuestion());
+            response.setOptions(saved.getOptions());
+            response.setCorrectAnswerIndex(saved.getCorrectAnswerIndex());
+            response.setExplanation(saved.getExplanation());
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            System.err.println("❌ [AdminCourseController] Error adding quiz: " + e.getMessage());
+            return ResponseEntity.status(404).body(java.util.Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            System.err.println("❌ [AdminCourseController] Unexpected error adding quiz: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(java.util.Map.of("message", "Error creating quiz", "error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{courseId}/quizzes/{quizId}")
+    @Transactional
+    public ResponseEntity<?> updateQuiz(
+            @PathVariable Long courseId,
+            @PathVariable Long quizId,
+            @RequestBody CourseDto.QuizDto quizDto) {
+        try {
+            Quiz quiz = quizRepository.findById(quizId)
+                    .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
+
+            if (quiz.getCourse() == null || !quiz.getCourse().getId().equals(courseId)) {
+                return ResponseEntity.status(404).body(java.util.Map.of("message", "Quiz does not belong to this course"));
+            }
+
+            quiz.setQuestion(quizDto.getQuestion());
+            quiz.setOptions(quizDto.getOptions());
+            quiz.setCorrectAnswerIndex(quizDto.getCorrectAnswerIndex());
+            quiz.setExplanation(quizDto.getExplanation());
+
+            Quiz saved = quizRepository.save(quiz);
+
+            CourseDto.QuizDto response = new CourseDto.QuizDto();
+            response.setId(saved.getId());
+            response.setQuestion(saved.getQuestion());
+            response.setOptions(saved.getOptions());
+            response.setCorrectAnswerIndex(saved.getCorrectAnswerIndex());
+            response.setExplanation(saved.getExplanation());
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            System.err.println("❌ [AdminCourseController] Error updating quiz: " + e.getMessage());
+            return ResponseEntity.status(404).body(java.util.Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            System.err.println("❌ [AdminCourseController] Unexpected error updating quiz: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(java.util.Map.of("message", "Error updating quiz", "error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{courseId}/quizzes/{quizId}")
+    @Transactional
+    public ResponseEntity<?> deleteQuiz(
+            @PathVariable Long courseId,
+            @PathVariable Long quizId) {
+        try {
+            Quiz quiz = quizRepository.findById(quizId).orElse(null);
+            if (quiz == null || quiz.getCourse() == null || !quiz.getCourse().getId().equals(courseId)) {
+                return ResponseEntity.status(404).body(java.util.Map.of("message", "Quiz not found with id: " + quizId));
+            }
+
+            quizRepository.delete(quiz);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            System.err.println("❌ [AdminCourseController] Error deleting quiz: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(java.util.Map.of("message", "Error deleting quiz", "error", e.getMessage()));
         }
     }
 }
