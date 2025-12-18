@@ -9,7 +9,9 @@ import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AuthService } from '../../../core/services/auth.service';
+import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 
 interface MenuItem {
   label: string;
@@ -32,7 +34,8 @@ interface MenuItem {
     MatListModule,
     MatMenuModule,
     MatBadgeModule,
-    MatDividerModule
+    MatDividerModule,
+    MatDialogModule
   ],
   templateUrl: './admin-layout.component.html',
   styleUrl: './admin-layout.component.css'
@@ -51,7 +54,8 @@ export class AdminLayoutComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -63,12 +67,26 @@ export class AdminLayoutComponent implements OnInit {
   }
 
   logout(): void {
-    if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-      this.authService.logout();
-      this.router.navigate(['/login']).then(() => {
-        console.log('✅ Déconnexion réussie');
-      });
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Déconnexion',
+        message: 'Êtes-vous sûr de vouloir vous déconnecter ?',
+        confirmText: 'Se déconnecter',
+        cancelText: 'Annuler',
+        icon: 'logout',
+        color: 'warn'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.authService.logout();
+        this.router.navigate(['/login']).then(() => {
+          console.log('✅ Déconnexion réussie');
+        });
+      }
+    });
   }
 }
 

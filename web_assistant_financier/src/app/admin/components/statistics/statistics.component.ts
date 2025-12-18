@@ -4,6 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { StatisticsService } from '../../../core/services/statistics.service';
 import { CourseStatistics } from '../../../models/statistics.model';
 import { BaseChartDirective } from 'ng2-charts';
@@ -18,6 +19,7 @@ import { ChartConfiguration } from 'chart.js';
     MatButtonModule,
     MatProgressSpinnerModule,
     MatIconModule,
+    MatSnackBarModule,
     BaseChartDirective
   ],
   templateUrl: './statistics.component.html',
@@ -108,7 +110,10 @@ export class StatisticsComponent implements OnInit {
     }
   };
 
-  constructor(private statisticsService: StatisticsService) {}
+  constructor(
+    private statisticsService: StatisticsService,
+    private snackBar: MatSnackBar
+  ) {}
 
   ngOnInit(): void {
     this.loadStatistics();
@@ -193,7 +198,7 @@ export class StatisticsComponent implements OnInit {
           }
         }
         
-        alert(errorMsg);
+        this.snackBar.open(errorMsg, 'Fermer', { duration: 4000 });
       }
     });
   }

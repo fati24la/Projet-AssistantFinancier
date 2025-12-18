@@ -33,13 +33,23 @@ public class User {
 
     private String password;
 
-    private Boolean enabled = true; // Par défaut, les utilisateurs sont activés
+    // Par défaut, les utilisateurs sont activés
+    // On utilise un Boolean pour pouvoir forcer la valeur à true au moment du persist si elle est null
+    private Boolean enabled = true;
 
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        // S'assurer que les nouveaux utilisateurs sont toujours activés par défaut
+        if (enabled == null) {
+            enabled = true;
+        }
+
+        // Initialiser la date de création si elle n'est pas déjà définie
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
     }
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
