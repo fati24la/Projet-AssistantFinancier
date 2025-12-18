@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 
 @Service
-public class ChatService {
+public class  ChatService {
 
     @Autowired
     private WhisperService whisperService;

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String baseUrl = "http://10.75.246.232:8080/api/auth"; // Utilisation de la même IP partout
+  static const String baseUrl = "http://192.168.11.109:8080/api/auth"; // Utilisation de la même IP partout
 
   // ---------------- REGISTER ----------------
   static Future<Map<String, dynamic>> register({

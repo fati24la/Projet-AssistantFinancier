@@ -1,0 +1,6 @@
+projectKey=Assistant-Financier
+serverUrl=http://localhost:9000
+serverVersion=25.11.0.114957
+dashboardUrl=http://localhost:9000/dashboard?id=Assistant-Financier
+ceTaskId=02c009eb-7d7f-4a76-a4b0-d8de229af66b
+ceTaskUrl=http://localhost:9000/api/ce/task?id=02c009eb-7d7f-4a76-a4b0-d8de229af66b
