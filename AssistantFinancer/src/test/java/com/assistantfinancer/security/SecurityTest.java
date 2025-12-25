@@ -91,7 +91,7 @@ class SecurityTest {
                     int status = result.getResponse().getStatus();
                     // Spring Security may return 401 or 403
                     assertTrue(status == 401 || status == 403, 
-                        "Expected 401 Unauthorized or 403 Forbidden, but got: " + status);
+                        () -> "Expected 401 Unauthorized or 403 Forbidden, but got: " + status);
                 });
     }
 
@@ -104,7 +104,7 @@ class SecurityTest {
                     int status = result.getResponse().getStatus();
                     // Spring Security may return 401 or 403 for expired tokens
                     assertTrue(status == 401 || status == 403, 
-                        "Expected 401 Unauthorized or 403 Forbidden, but got: " + status);
+                        () -> "Expected 401 Unauthorized or 403 Forbidden, but got: " + status);
                 });
     }
 
@@ -121,7 +121,7 @@ class SecurityTest {
                     int status = result.getResponse().getStatus();
                     // Accept any error status (4xx or 5xx) - the important thing is that access is denied
                     assertTrue(status >= 400 && status < 600, 
-                        "Expected error status (4xx or 5xx), but got: " + status);
+                        () -> "Expected error status (4xx or 5xx), but got: " + status);
                 });
     }
 
@@ -196,7 +196,7 @@ class SecurityTest {
                     int status = result.getResponse().getStatus();
                     // Spring Security may return 401 or 403 for invalid tokens
                     assertTrue(status == 401 || status == 403, 
-                        "Expected 401 Unauthorized or 403 Forbidden, but got: " + status);
+                        () -> "Expected 401 Unauthorized or 403 Forbidden, but got: " + status);
                 });
     }
 
@@ -208,7 +208,7 @@ class SecurityTest {
                     int status = result.getResponse().getStatus();
                     // Spring Security may return 401 or 403 for missing tokens
                     assertTrue(status == 401 || status == 403, 
-                        "Expected 401 Unauthorized or 403 Forbidden, but got: " + status);
+                        () -> "Expected 401 Unauthorized or 403 Forbidden, but got: " + status);
                 });
     }
 
@@ -221,7 +221,7 @@ class SecurityTest {
                     int status = result.getResponse().getStatus();
                     // Spring Security may return 401 or 403 for malformed tokens
                     assertTrue(status == 401 || status == 403, 
-                        "Expected 401 Unauthorized or 403 Forbidden, but got: " + status);
+                        () -> "Expected 401 Unauthorized or 403 Forbidden, but got: " + status);
                 });
     }
 }
